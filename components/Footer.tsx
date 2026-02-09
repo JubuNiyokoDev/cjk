@@ -1,7 +1,27 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import { Heart, Mail, Phone, MapPin, Radio } from 'lucide-react';
+import Link from 'next/link';
+
+const footerNav = [
+  { name: 'Accueil', href: '/#home' },
+  { name: 'À propos', href: '/#about' },
+  { name: 'Mission', href: '/#mission' },
+  { name: 'Activités', href: '/#activities' },
+  { name: 'Blog', href: '/#blog' },
+  { name: 'Actualités', href: '/#news' },
+  { name: 'Contact', href: '/#contact' },
+];
+
+const values = [
+  'Vérité',
+  'Tolérance',
+  'Justice sociale',
+  'Intégrité',
+  'Écoute',
+  'Respect',
+];
 
 export default function Footer() {
   return (
@@ -26,30 +46,25 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-4 text-lg">Navigation</h4>
             <ul className="space-y-2">
-              {['Accueil', 'À propos', 'Mission', 'Activités', 'Contact'].map(
-                (item) => (
-                  <li key={item}>
-                    <a
-                      href={`#${item.toLowerCase().replace('à propos', 'about')}`}
-                      className="text-gray-400 hover:text-orange-500 transition-colors"
-                    >
-                      {item}
-                    </a>
-                  </li>
-                )
-              )}
+              {footerNav.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-gray-400 hover:text-orange-500 transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold mb-4 text-lg">Nos Valeurs</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
-              <li>• Vérité</li>
-              <li>• Tolérance</li>
-              <li>• Justice sociale</li>
-              <li>• Intégrité</li>
-              <li>• Écoute</li>
-              <li>• Respect</li>
+              {values.map((value) => (
+                <li key={value}>• {value}</li>
+              ))}
             </ul>
           </div>
 
@@ -79,8 +94,7 @@ export default function Footer() {
         <div className="border-t border-gray-700 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">
-              © {new Date().getFullYear()} Centre Jeunes Kamenge. Tous droits
-              réservés.
+              © {new Date().getFullYear()} Centre Jeunes Kamenge. Tous droits réservés.
             </p>
             <motion.div
               whileHover={{ scale: 1.05 }}

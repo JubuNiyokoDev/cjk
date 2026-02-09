@@ -1,16 +1,19 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import Link from 'next/link';
 
 const navItems = [
-  { name: 'Accueil', href: '#home' },
-  { name: 'À propos', href: '#about' },
-  { name: 'Mission', href: '#mission' },
-  { name: 'Activités', href: '#activities' },
-  { name: 'Histoire', href: '#history' },
-  { name: 'Contact', href: '#contact' },
+  { name: 'Accueil', href: '/#home' },
+  { name: 'À propos', href: '/#about' },
+  { name: 'Mission', href: '/#mission' },
+  { name: 'Activités', href: '/#activities' },
+  { name: 'Blog', href: '/#blog' },
+  { name: 'Actualités', href: '/#news' },
+  { name: 'Histoire', href: '/#history' },
+  { name: 'Contact', href: '/#contact' },
 ];
 
 export default function Navigation() {
@@ -30,9 +33,7 @@ export default function Navigation() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`fixed w-full z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg'
-          : 'bg-transparent'
+        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -56,17 +57,21 @@ export default function Navigation() {
 
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item, index) => (
-              <motion.a
+              <motion.div
                 key={item.name}
-                href={item.href}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * index }}
-                className="text-gray-700 hover:text-orange-500 transition-colors font-medium relative group"
+                className="relative group"
               >
-                {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-red-500 group-hover:w-full transition-all duration-300" />
-              </motion.a>
+                <Link
+                  href={item.href}
+                  className="text-gray-700 hover:text-orange-500 transition-colors font-medium relative group"
+                >
+                  {item.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-red-500 group-hover:w-full transition-all duration-300" />
+                </Link>
+              </motion.div>
             ))}
           </div>
 
@@ -89,14 +94,14 @@ export default function Navigation() {
           >
             <div className="px-4 py-4 space-y-3">
               {navItems.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className="block py-2 text-gray-700 hover:text-orange-500 transition-colors font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
             </div>
           </motion.div>
