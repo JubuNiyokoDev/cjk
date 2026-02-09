@@ -75,6 +75,10 @@ export async function getBlogPosts(params?: {
   return unwrapList(data);
 }
 
+export async function getBlogPost(id: number) {
+  return safeFetch<BlogPost>(`/api/blog/posts/${id}/`, undefined, { next: { revalidate: 60 } });
+}
+
 export async function getBlogCategories() {
   const data = await safeFetch<BlogCategory[] | Paginated<BlogCategory>>(
     '/api/blog/categories/',
