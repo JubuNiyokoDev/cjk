@@ -1,27 +1,31 @@
 ﻿'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
-import { toggleLike } from '@/lib/social';
+import { isUnauthorized, toggleLike } from '@/lib/social';
 import { cn } from '@/lib/utils';
 
 type LikeButtonProps = {
-  contentTypeId: number;
+  contentType: number | string;
   objectId: number;
   initialLiked?: boolean;
   initialCount?: number;
 };
 
 export default function LikeButton({
-  contentTypeId,
+  contentType,
   objectId,
   initialLiked = false,
   initialCount = 0,
 }: LikeButtonProps) {
+  const router = useRouter();
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [isLoading, setIsLoading] = useState(false);
-  const isDisabled = !contentTypeId || contentTypeId <= 0;
+  const isDisabled =
+    (typeof contentType === 'number' && contentType <= 0) ||
+    (typeof contentType === 'string' && contentType.trim().length === 0);
 
   const handleToggle = async () => {
     if (isLoading || isDisabled) return;
@@ -34,7 +38,7 @@ export default function LikeButton({
 
     try {
       const response = await toggleLike({
-        content_type: contentTypeId,
+        content_type: contentType,
         object_id: objectId,
       });
 
@@ -48,6 +52,10 @@ export default function LikeButton({
         setCount(response.count);
       }
     } catch (error) {
+      if (isUnauthorized(error)) {
+        router.push('/auth');
+        return;
+      }
       setLiked(liked);
       setCount(count);
     } finally {

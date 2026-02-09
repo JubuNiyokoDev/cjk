@@ -10,6 +10,22 @@ import { BookOpen } from 'lucide-react';
 const BLOG_CONTENT_TYPE_ID = Number(process.env.NEXT_PUBLIC_BLOG_CONTENT_TYPE_ID ?? '0');
 const BLOG_CONTENT_TYPE_SAFE = Number.isFinite(BLOG_CONTENT_TYPE_ID) ? BLOG_CONTENT_TYPE_ID : 0;
 
+function resolveContentTypeValue(post: {
+  content_type?: number | string | null;
+  content_type_id?: number | null;
+}) {
+  if (typeof post.content_type_id === 'number' && post.content_type_id > 0) {
+    return post.content_type_id;
+  }
+  if (typeof post.content_type === 'number' && post.content_type > 0) {
+    return post.content_type;
+  }
+  if (typeof post.content_type === 'string' && post.content_type.trim().length > 0) {
+    return post.content_type;
+  }
+  return BLOG_CONTENT_TYPE_SAFE;
+}
+
 type BlogPostPageProps = {
   params: { id: string };
 };
@@ -18,6 +34,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const postId = Number(params.id);
   const post = await getBlogPost(postId);
   const imageUrl = resolveImageUrl(API_BASE_URL, post.image);
+  const contentType = resolveContentTypeValue(post);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -60,14 +77,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </p>
             </div>
             <div className="border-t border-gray-100 px-6 sm:px-8 py-4 flex flex-wrap gap-4 items-center justify-between">
-              <LikeButton contentTypeId={BLOG_CONTENT_TYPE_SAFE} objectId={post.id} />
+              <LikeButton contentType={contentType} objectId={post.id} />
               <span className="text-sm text-gray-500">
                 Partage et interactions disponibles pour les membres connectés.
               </span>
             </div>
           </div>
 
-          <CommentsPanel contentTypeId={BLOG_CONTENT_TYPE_SAFE} objectId={post.id} />
+          <CommentsPanel contentType={contentType} objectId={post.id} />
         </div>
       </section>
       <Footer />

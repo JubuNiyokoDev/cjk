@@ -6,7 +6,7 @@ import type { Member } from '@/lib/types';
 
 export type SocialComment = {
   id: number;
-  content_type: number;
+  content_type: number | string;
   object_id: number;
   text: string;
   content?: string;
@@ -58,31 +58,59 @@ async function request<T>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || 'Erreur serveur');
+    throw new ApiError(errorText || 'Erreur serveur', response.status);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
   }
 
   return (await response.json()) as T;
 }
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export function isUnauthorized(error: unknown) {
+  return error instanceof ApiError && error.status === 401;
+}
+
 export async function toggleLike(params: {
-  content_type: number;
+  content_type: number | string;
   object_id: number;
 }) {
+  const payload =
+    typeof params.content_type === 'number'
+      ? { content_type: params.content_type, object_id: params.object_id }
+      : { content_type_str: params.content_type, object_id: params.object_id };
+
   return request<LikeResponse>('/api/social/likes/toggle/', {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify(params),
+    body: JSON.stringify(payload),
   });
 }
 
 export async function getComments(params: {
-  content_type: number;
+  content_type: number | string;
   object_id: number;
 }) {
-  const query = new URLSearchParams({
-    content_type: String(params.content_type),
-    object_id: String(params.object_id),
-  });
+  const query =
+    typeof params.content_type === 'number'
+      ? new URLSearchParams({
+          content_type: String(params.content_type),
+          object_id: String(params.object_id),
+        })
+      : new URLSearchParams({
+          content_type_str: params.content_type,
+          object_id: String(params.object_id),
+        });
   const data = await request<SocialComment[] | Paginated<SocialComment>>(
     `/api/social/comments/?${query.toString()}`,
     { headers: getAuthHeaders() }
@@ -91,7 +119,7 @@ export async function getComments(params: {
 }
 
 export async function createComment(params: {
-  content_type: number;
+  content_type: number | string;
   object_id: number;
   text: string;
   user?: number;
@@ -107,15 +135,25 @@ export async function createComment(params: {
     userId = member.id;
   }
 
+  const payload =
+    typeof params.content_type === 'number'
+      ? {
+          content_type: params.content_type,
+          object_id: params.object_id,
+          text: params.text,
+          user: userId,
+        }
+      : {
+          content_type_str: params.content_type,
+          object_id: params.object_id,
+          text: params.text,
+          user: userId,
+        };
+
   return request<SocialComment>('/api/social/comments/', {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      content_type: params.content_type,
-      object_id: params.object_id,
-      text: params.text,
-      user: userId,
-    }),
+    body: JSON.stringify(payload),
   });
 }
 

@@ -25,6 +25,8 @@ export type BlogPost = {
   author_name: string;
   category: number;
   category_name: string;
+  content_type?: string | number | null;
+  content_type_id?: number | null;
   content: string;
   image: string | null;
   is_published: boolean;

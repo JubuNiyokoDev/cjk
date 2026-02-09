@@ -1,11 +1,13 @@
 ﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Trash2, Pencil, Save } from 'lucide-react';
 import {
   createComment,
   deleteComment,
   getComments,
+  isUnauthorized,
   updateComment,
   type SocialComment,
 } from '@/lib/social';
@@ -17,7 +19,7 @@ const emptyState = {
 };
 
 type CommentsPanelProps = {
-  contentTypeId: number;
+  contentType: number | string;
   objectId: number;
   title?: string;
 };
@@ -27,7 +29,8 @@ type Draft = {
   value: string;
 };
 
-export default function CommentsPanel({ contentTypeId, objectId, title }: CommentsPanelProps) {
+export default function CommentsPanel({ contentType, objectId, title }: CommentsPanelProps) {
+  const router = useRouter();
   const [comments, setComments] = useState<SocialComment[]>([]);
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -39,15 +42,21 @@ export default function CommentsPanel({ contentTypeId, objectId, title }: Commen
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
-    if (!contentTypeId || contentTypeId <= 0) {
-      setStatus('Configurer NEXT_PUBLIC_BLOG_CONTENT_TYPE_ID pour activer les commentaires.');
+    const hasContentType =
+      (typeof contentType === 'number' && contentType > 0) ||
+      (typeof contentType === 'string' && contentType.trim().length > 0);
+
+    if (!hasContentType) {
+      setStatus(
+        "Type de contenu manquant. Vérifiez que l'API renvoie content_type ou configurez NEXT_PUBLIC_BLOG_CONTENT_TYPE_ID."
+      );
       setComments([]);
       setIsLoading(false);
       return () => {
         isMounted = false;
       };
     }
-    getComments({ content_type: contentTypeId, object_id: objectId })
+    getComments({ content_type: contentType, object_id: objectId })
       .then((data) => {
         if (isMounted) setComments(data);
       })
@@ -61,7 +70,7 @@ export default function CommentsPanel({ contentTypeId, objectId, title }: Commen
     return () => {
       isMounted = false;
     };
-  }, [contentTypeId, objectId]);
+  }, [contentType, objectId]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -70,13 +79,17 @@ export default function CommentsPanel({ contentTypeId, objectId, title }: Commen
 
     try {
       const newComment = await createComment({
-        content_type: contentTypeId,
+        content_type: contentType,
         object_id: objectId,
         text: message.trim(),
       });
       setComments((prev) => [newComment, ...prev]);
       setMessage('');
     } catch (error) {
+      if (isUnauthorized(error)) {
+        router.push('/auth');
+        return;
+      }
       setStatus("Impossible d'envoyer le commentaire.");
     }
   };
@@ -99,7 +112,11 @@ export default function CommentsPanel({ contentTypeId, objectId, title }: Commen
       setComments((prev) => prev.map((item) => (item.id === commentId ? updated : item)));
       setDraft(null);
     } catch (error) {
-      setStatus("Impossible de modifier le commentaire.");
+      if (isUnauthorized(error)) {
+        router.push('/auth');
+        return;
+      }
+      setStatus('Impossible de modifier le commentaire.');
     }
   };
 
@@ -110,7 +127,11 @@ export default function CommentsPanel({ contentTypeId, objectId, title }: Commen
       await deleteComment(commentId);
       setComments((prev) => prev.filter((item) => item.id !== commentId));
     } catch (error) {
-      setStatus("Impossible de supprimer le commentaire.");
+      if (isUnauthorized(error)) {
+        router.push('/auth');
+        return;
+      }
+      setStatus('Impossible de supprimer le commentaire.');
     }
   };
 

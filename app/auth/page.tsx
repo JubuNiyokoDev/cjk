@@ -15,6 +15,7 @@ type RegisterState = {
   username: string;
   email: string;
   password: string;
+  confirm_password: string;
   first_name: string;
   last_name: string;
   phone: string;
@@ -31,12 +32,56 @@ const initialRegister: RegisterState = {
   username: '',
   email: '',
   password: '',
+  confirm_password: '',
   first_name: '',
   last_name: '',
   phone: '',
   quartier: '',
   date_naissance: '',
 };
+
+const usernamePattern = /^[\w.@+-]+$/;
+
+function validateUsername(username: string) {
+  if (!usernamePattern.test(username)) {
+    return "Le nom d'utilisateur ne peut contenir que lettres, chiffres ou @ . + - _";
+  }
+  return null;
+}
+
+function getPasswordChecks(password: string) {
+  return {
+    length: password.length >= 8,
+    lower: /[a-z]/.test(password),
+    upper: /[A-Z]/.test(password),
+    number: /\d/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+}
+
+function getPasswordStrength(password: string) {
+  const checks = getPasswordChecks(password);
+  const score = Object.values(checks).filter(Boolean).length;
+  if (score <= 2) return { score, label: 'Faible', color: 'bg-red-400' };
+  if (score <= 4) return { score, label: 'Moyen', color: 'bg-yellow-400' };
+  return { score, label: 'Fort', color: 'bg-green-500' };
+}
+
+async function readErrorMessage(response: Response) {
+  try {
+    const data = await response.json();
+    if (typeof data === 'string') return data;
+    if (data && typeof data === 'object') {
+      for (const value of Object.values(data)) {
+        if (Array.isArray(value) && value.length > 0) return String(value[0]);
+        if (typeof value === 'string') return value;
+      }
+    }
+  } catch {
+    // ignore JSON parsing errors
+  }
+  return "Inscription impossible";
+}
 
 export default function AuthPage() {
   const [login, setLogin] = useState<LoginState>(initialLogin);
@@ -46,6 +91,13 @@ export default function AuthPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [hasSession, setHasSession] = useState(false);
+  const passwordChecks = getPasswordChecks(register.password);
+  const passwordStrength = getPasswordStrength(register.password);
+  const usernameError = register.username ? validateUsername(register.username) : null;
+  const passwordsMatch =
+    register.password.length === 0 && register.confirm_password.length === 0
+      ? true
+      : register.password === register.confirm_password;
 
   useEffect(() => {
     setHasSession(Boolean(getTokens()));
@@ -81,18 +133,50 @@ export default function AuthPage() {
 
   const handleRegister = async (event: FormEvent) => {
     event.preventDefault();
-    setIsRegistering(true);
     setRegisterMessage(null);
 
+    const usernameValidation = validateUsername(register.username);
+    if (usernameValidation) {
+      setRegisterMessage(usernameValidation);
+      return;
+    }
+
+    const checks = getPasswordChecks(register.password);
+    const isStrong =
+      checks.length && checks.lower && checks.upper && checks.number && checks.special;
+    if (!isStrong) {
+      setRegisterMessage(
+        'Le mot de passe doit contenir au moins 8 caractères avec majuscule, minuscule, chiffre et caractère spécial.'
+      );
+      return;
+    }
+
+    if (!passwordsMatch) {
+      setRegisterMessage('Les mots de passe ne correspondent pas.');
+      return;
+    }
+
+    setIsRegistering(true);
+
     try {
+      const payload = {
+        username: register.username,
+        email: register.email,
+        password: register.password,
+        first_name: register.first_name,
+        last_name: register.last_name,
+        phone: register.phone,
+        quartier: register.quartier,
+        date_naissance: register.date_naissance,
+      };
       const response = await fetch(`${API_BASE_URL}/api/members/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(register),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Inscription impossible");
+        throw new Error(await readErrorMessage(response));
       }
 
       setRegisterMessage('Compte créé. Vous pouvez maintenant vous connecter.');
@@ -204,6 +288,9 @@ export default function AuthPage() {
                     className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     required
                   />
+                  {usernameError && (
+                    <p className="mt-2 text-xs text-red-500">{usernameError}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Email</label>
@@ -224,6 +311,49 @@ export default function AuthPage() {
                     className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     required
                   />
+                  <div className="mt-3">
+                    <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full ${passwordStrength.color}`}
+                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Force du mot de passe : {passwordStrength.label}
+                    </p>
+                    <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs text-gray-500">
+                      <span className={passwordChecks.length ? 'text-green-600' : ''}>
+                        • 8 caractères minimum
+                      </span>
+                      <span className={passwordChecks.upper ? 'text-green-600' : ''}>
+                        • Une majuscule
+                      </span>
+                      <span className={passwordChecks.lower ? 'text-green-600' : ''}>
+                        • Une minuscule
+                      </span>
+                      <span className={passwordChecks.number ? 'text-green-600' : ''}>
+                        • Un chiffre
+                      </span>
+                      <span className={passwordChecks.special ? 'text-green-600' : ''}>
+                        • Un caractère spécial
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">Confirmer le mot de passe</label>
+                  <input
+                    type="password"
+                    value={register.confirm_password}
+                    onChange={(event) =>
+                      setRegister({ ...register, confirm_password: event.target.value })
+                    }
+                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    required
+                  />
+                  {!passwordsMatch && register.confirm_password.length > 0 && (
+                    <p className="mt-2 text-xs text-red-500">Les mots de passe ne correspondent pas.</p>
+                  )}
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
