@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import Link from 'next/link';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Heart } from 'lucide-react';
 import type { BlogPost } from '@/lib/types';
 import { API_BASE_URL } from '@/lib/api';
 import { formatDate, getExcerpt, resolveImageUrl } from '@/lib/content';
@@ -24,23 +24,27 @@ export default function BlogCard({ post, variant = 'full' }: BlogCardProps) {
           isCompact ? 'min-h-[360px]' : 'min-h-[420px]'
         )}
       >
-        <div className={cn('relative', isCompact ? 'h-40' : 'h-48')}>
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={post.title}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="h-full w-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-              <BookOpen className="w-10 h-10 text-white" />
-            </div>
-          )}
-          <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white/90 text-sm font-semibold text-orange-600">
-            {post.category_name}
+      <div className={cn('relative', isCompact ? 'h-40' : 'h-48')}>
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={post.title}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+            <BookOpen className="w-10 h-10 text-white" />
           </div>
+        )}
+        <div className="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-700">
+          <Heart className={cn('h-4 w-4', post.is_liked ? 'fill-red-500 text-red-500' : 'text-gray-400')} />
+          <span>{post.likes_count ?? 0}</span>
         </div>
+        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white/90 text-sm font-semibold text-orange-600">
+          {post.category_name}
+        </div>
+      </div>
 
         <div className={cn('p-6 flex flex-col gap-3', isCompact ? 'sm:p-5' : 'sm:p-6')}>
           <div className="flex items-center gap-2 text-sm text-gray-500">

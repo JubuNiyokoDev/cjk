@@ -25,13 +25,16 @@ export type BlogPost = {
   author_name: string;
   category: number;
   category_name: string;
-  content_type?: string | number | null;
+  content_type?: string | null;
   content_type_id?: number | null;
   content: string;
   image: string | null;
   is_published: boolean;
   created_at: string;
   updated_at: string;
+  likes_count?: number;
+  comments_count?: number;
+  is_liked?: boolean;
 };
 
 export type NewsItem = {

@@ -7,23 +7,15 @@ import { getBlogPost, API_BASE_URL } from '@/lib/api';
 import { formatDate, resolveImageUrl } from '@/lib/content';
 import { BookOpen } from 'lucide-react';
 
-const BLOG_CONTENT_TYPE_ID = Number(process.env.NEXT_PUBLIC_BLOG_CONTENT_TYPE_ID ?? '0');
-const BLOG_CONTENT_TYPE_SAFE = Number.isFinite(BLOG_CONTENT_TYPE_ID) ? BLOG_CONTENT_TYPE_ID : 0;
+const BLOG_CONTENT_TYPE = (process.env.NEXT_PUBLIC_BLOG_CONTENT_TYPE ?? '').trim();
 
 function resolveContentTypeValue(post: {
-  content_type?: number | string | null;
-  content_type_id?: number | null;
+  content_type?: string | null;
 }) {
-  if (typeof post.content_type_id === 'number' && post.content_type_id > 0) {
-    return post.content_type_id;
-  }
-  if (typeof post.content_type === 'number' && post.content_type > 0) {
-    return post.content_type;
-  }
   if (typeof post.content_type === 'string' && post.content_type.trim().length > 0) {
-    return post.content_type;
+    return post.content_type.trim();
   }
-  return BLOG_CONTENT_TYPE_SAFE;
+  return BLOG_CONTENT_TYPE;
 }
 
 type BlogPostPageProps = {
@@ -77,7 +69,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </p>
             </div>
             <div className="border-t border-gray-100 px-6 sm:px-8 py-4 flex flex-wrap gap-4 items-center justify-between">
-              <LikeButton contentType={contentType} objectId={post.id} />
+              <LikeButton
+                contentType={contentType}
+                objectId={post.id}
+                initialCount={post.likes_count ?? 0}
+                initialLiked={post.is_liked ?? false}
+              />
               <span className="text-sm text-gray-500">
                 Partage et interactions disponibles pour les membres connectés.
               </span>

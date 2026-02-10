@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { API_BASE_URL } from '@/lib/api';
-import { getTokens } from '@/lib/auth';
+import { getTokens, refreshAccessToken } from '@/lib/auth';
 import type { Member } from '@/lib/types';
 
 export type SocialComment = {
@@ -10,8 +10,9 @@ export type SocialComment = {
   object_id: number;
   text: string;
   content?: string;
-  author?: number | null;
-  author_name?: string | null;
+  user?: number | null;
+  user_name?: string | null;
+  user_photo?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -35,18 +36,20 @@ function unwrapList<T>(data: T[] | Paginated<T>) {
   return [] as T[];
 }
 
-function getAuthHeaders(): Record<string, string> {
+function getAuthHeaders(accessToken?: string): Record<string, string> {
   const headers: Record<string, string> = {};
   const tokens = getTokens();
-  if (tokens?.access) {
-    headers.Authorization = `Bearer ${tokens.access}`;
+  const access = accessToken ?? tokens?.access;
+  if (access) {
+    headers.Authorization = `Bearer ${access}`;
   }
   return headers;
 }
 
 async function request<T>(
   path: string,
-  init?: RequestInit
+  init?: RequestInit,
+  retry = true
 ): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -55,6 +58,23 @@ async function request<T>(
       ...(init?.headers ?? {}),
     },
   });
+
+  if (response.status === 401 && retry) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed?.access) {
+      return request<T>(
+        path,
+        {
+          ...init,
+          headers: {
+            ...(init?.headers ?? {}),
+            Authorization: `Bearer ${refreshed.access}`,
+          },
+        },
+        false
+      );
+    }
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -82,35 +102,27 @@ export function isUnauthorized(error: unknown) {
 }
 
 export async function toggleLike(params: {
-  content_type: number | string;
+  content_type: string;
   object_id: number;
 }) {
-  const payload =
-    typeof params.content_type === 'number'
-      ? { content_type: params.content_type, object_id: params.object_id }
-      : { content_type_str: params.content_type, object_id: params.object_id };
-
   return request<LikeResponse>('/api/social/likes/toggle/', {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      content_type: params.content_type,
+      object_id: params.object_id,
+    }),
   });
 }
 
 export async function getComments(params: {
-  content_type: number | string;
+  content_type: string;
   object_id: number;
 }) {
-  const query =
-    typeof params.content_type === 'number'
-      ? new URLSearchParams({
-          content_type: String(params.content_type),
-          object_id: String(params.object_id),
-        })
-      : new URLSearchParams({
-          content_type_str: params.content_type,
-          object_id: String(params.object_id),
-        });
+  const query = new URLSearchParams({
+    content_type: params.content_type,
+    object_id: String(params.object_id),
+  });
   const data = await request<SocialComment[] | Paginated<SocialComment>>(
     `/api/social/comments/?${query.toString()}`,
     { headers: getAuthHeaders() }
@@ -119,7 +131,7 @@ export async function getComments(params: {
 }
 
 export async function createComment(params: {
-  content_type: number | string;
+  content_type: string;
   object_id: number;
   text: string;
   user?: number;
@@ -135,25 +147,16 @@ export async function createComment(params: {
     userId = member.id;
   }
 
-  const payload =
-    typeof params.content_type === 'number'
-      ? {
-          content_type: params.content_type,
-          object_id: params.object_id,
-          text: params.text,
-          user: userId,
-        }
-      : {
-          content_type_str: params.content_type,
-          object_id: params.object_id,
-          text: params.text,
-          user: userId,
-        };
-
   return request<SocialComment>('/api/social/comments/', {
     method: 'POST',
     headers,
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      content_type: params.content_type,
+      content_type_str: params.content_type,
+      object_id: params.object_id,
+      text: params.text,
+      user: userId,
+    }),
   });
 }
 

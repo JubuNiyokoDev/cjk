@@ -41,13 +41,24 @@ async function safeFetch<T>(
 ): Promise<T> {
   try {
     const url = buildUrl(path, params);
+    const shouldSkipCache = init?.cache === 'no-store';
+    const nextOption = shouldSkipCache ? undefined : init?.next ?? { revalidate: 60 };
+    
+    // Ajouter automatiquement l'Authorization header si un token existe
+    const { getTokens } = await import('./auth');
+    const tokens = getTokens();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(init?.headers ?? {}),
+    };
+    if (tokens?.access) {
+      headers.Authorization = `Bearer ${tokens.access}`;
+    }
+    
     const response = await fetch(url, {
       ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init?.headers ?? {}),
-      },
-      next: init?.next ?? { revalidate: 60 },
+      headers,
+      ...(nextOption ? { next: nextOption } : {}),
     });
 
     if (!response.ok) {
@@ -69,14 +80,14 @@ export async function getBlogPosts(params?: {
   const data = await safeFetch<BlogPost[] | Paginated<BlogPost>>(
     '/api/blog/posts/',
     params,
-    { next: { revalidate: 60 } },
+    { cache: 'no-store' },
     []
   );
   return unwrapList(data);
 }
 
 export async function getBlogPost(id: number) {
-  return safeFetch<BlogPost>(`/api/blog/posts/${id}/`, undefined, { next: { revalidate: 60 } });
+  return safeFetch<BlogPost>(`/api/blog/posts/${id}/`, undefined, { cache: 'no-store' });
 }
 
 export async function getBlogCategories() {

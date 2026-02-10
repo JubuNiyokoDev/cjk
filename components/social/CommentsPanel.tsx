@@ -19,7 +19,7 @@ const emptyState = {
 };
 
 type CommentsPanelProps = {
-  contentType: number | string;
+  contentType: string;
   objectId: number;
   title?: string;
 };
@@ -42,13 +42,11 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
-    const hasContentType =
-      (typeof contentType === 'number' && contentType > 0) ||
-      (typeof contentType === 'string' && contentType.trim().length > 0);
+    const hasContentType = contentType.trim().length > 0;
 
     if (!hasContentType) {
       setStatus(
-        "Type de contenu manquant. Vérifiez que l'API renvoie content_type ou configurez NEXT_PUBLIC_BLOG_CONTENT_TYPE_ID."
+        "Type de contenu manquant. Vérifiez que l'API renvoie content_type ou configurez NEXT_PUBLIC_BLOG_CONTENT_TYPE."
       );
       setComments([]);
       setIsLoading(false);
@@ -163,7 +161,26 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
       {status && <p className="text-sm text-red-500 mb-4">{status}</p>}
 
       {isLoading ? (
-        <p className="text-gray-500">Chargement...</p>
+        <div className="space-y-4">
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className="border border-gray-100 rounded-2xl p-4 animate-pulse"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gray-200" />
+                <div className="flex-1">
+                  <div className="h-3 w-32 bg-gray-200 rounded" />
+                  <div className="mt-2 h-2 w-20 bg-gray-200 rounded" />
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="h-3 w-full bg-gray-200 rounded" />
+                <div className="h-3 w-5/6 bg-gray-200 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : comments.length === 0 ? (
         <div className="bg-orange-50 rounded-2xl p-6 text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">{emptyState.title}</h3>
@@ -174,13 +191,29 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
           {comments.map((comment) => (
             <div key={comment.id} className="border border-gray-100 rounded-2xl p-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {comment.author_name ?? 'Membre CJK'}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {formatDate(comment.created_at ?? undefined)}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                    {comment.user_photo ? (
+                      <img
+                        src={comment.user_photo}
+                        alt={comment.user_name ?? 'Membre CJK'}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-sm font-semibold text-orange-600">
+                        {(comment.user_name ?? 'CJK').slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {comment.user_name ?? 'Membre CJK'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(comment.created_at ?? undefined)}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <button
@@ -197,6 +230,9 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
                   >
                     <Trash2 className="w-3 h-3" /> Supprimer
                   </button>
+                  {comment.updated_at && comment.updated_at !== comment.created_at && (
+                    <span className="text-gray-400">• Modifié</span>
+                  )}
                 </div>
               </div>
 

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthSession } from '@/hooks/use-auth-session';
 
 const navItems = [
   { name: 'Accueil', href: '/#home' },
@@ -19,6 +20,13 @@ const navItems = [
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { member, isAuthenticated, isLoading, logout } = useAuthSession();
+
+  const displayName =
+    member?.first_name || member?.last_name
+      ? `${member?.first_name ?? ''} ${member?.last_name ?? ''}`.trim()
+      : member?.username ?? 'Membre';
+  const initial = displayName.slice(0, 1).toUpperCase();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -75,6 +83,41 @@ export default function Navigation() {
             ))}
           </div>
 
+          <div className="hidden md:flex items-center gap-4">
+            {isLoading ? null : isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                  {member?.photo ? (
+                    <img
+                      src={member.photo}
+                      alt={displayName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-orange-600">{initial}</span>
+                  )}
+                </div>
+                <div className="text-sm">
+                  <p className="font-semibold text-gray-900">{displayName}</p>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-orange-500"
+                  >
+                    <LogOut className="h-3 w-3" /> Se déconnecter
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link
+                href="/auth"
+                className="px-4 py-2 rounded-full border border-orange-200 text-orange-600 font-semibold hover:bg-orange-50 transition"
+              >
+                Se connecter
+              </Link>
+            )}
+          </div>
+
           <button
             className="md:hidden text-gray-700"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -103,6 +146,44 @@ export default function Navigation() {
                   {item.name}
                 </Link>
               ))}
+            </div>
+            <div className="border-t px-4 py-4">
+              {isLoading ? null : isAuthenticated ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                      {member?.photo ? (
+                        <img
+                          src={member.photo}
+                          alt={displayName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-semibold text-orange-600">{initial}</span>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900">{displayName}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1 text-sm text-gray-500"
+                  >
+                    <LogOut className="h-4 w-4" /> Déconnexion
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/auth"
+                  className="inline-flex items-center justify-center w-full px-4 py-2 rounded-full border border-orange-200 text-orange-600 font-semibold hover:bg-orange-50 transition"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Se connecter
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

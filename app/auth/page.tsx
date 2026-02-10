@@ -1,10 +1,13 @@
-﻿'use client';
+﻿/* eslint-disable react/no-unescaped-entities */
+'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { API_BASE_URL } from '@/lib/api';
-import { clearTokens, getTokens, saveTokens } from '@/lib/auth';
+import { getTokens, saveTokens } from '@/lib/auth';
+import { useAuthSession } from '@/hooks/use-auth-session';
+import Image from 'next/image';
 
 type LoginState = {
   username: string;
@@ -80,17 +83,18 @@ async function readErrorMessage(response: Response) {
   } catch {
     // ignore JSON parsing errors
   }
-  return "Inscription impossible";
+  return 'Inscription impossible';
 }
 
 export default function AuthPage() {
+  const { member, isAuthenticated, isLoading, refresh, logout } = useAuthSession();
   const [login, setLogin] = useState<LoginState>(initialLogin);
   const [register, setRegister] = useState<RegisterState>(initialRegister);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [registerMessage, setRegisterMessage] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [hasSession, setHasSession] = useState(false);
+
   const passwordChecks = getPasswordChecks(register.password);
   const passwordStrength = getPasswordStrength(register.password);
   const usernameError = register.username ? validateUsername(register.username) : null;
@@ -100,7 +104,9 @@ export default function AuthPage() {
       : register.password === register.confirm_password;
 
   useEffect(() => {
-    setHasSession(Boolean(getTokens()));
+    if (getTokens()) {
+      setLoginMessage(null);
+    }
   }, []);
 
   const handleLogin = async (event: FormEvent) => {
@@ -121,7 +127,7 @@ export default function AuthPage() {
 
       const tokens = await response.json();
       saveTokens(tokens);
-      setHasSession(true);
+      await refresh();
       setLoginMessage('Connexion réussie. Votre session est active.');
       setLogin(initialLogin);
     } catch (error) {
@@ -189,10 +195,14 @@ export default function AuthPage() {
   };
 
   const handleLogout = () => {
-    clearTokens();
-    setHasSession(false);
+    logout();
     setLoginMessage('Vous êtes déconnecté.');
   };
+
+  const displayName =
+    member?.first_name || member?.last_name
+      ? `${member?.first_name ?? ''} ${member?.last_name ?? ''}`.trim()
+      : member?.username ?? 'Membre CJK';
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -208,195 +218,238 @@ export default function AuthPage() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          {isLoading ? (
+            <div className="bg-white rounded-3xl shadow-lg p-8 text-center text-gray-500">
+              Chargement de la session...
+            </div>
+          ) : isAuthenticated ? (
             <div className="bg-white rounded-3xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Connexion</h2>
-              <form className="space-y-4" onSubmit={handleLogin}>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Nom d'utilisateur</label>
-                  <input
-                    type="text"
-                    value={login.username}
-                    onChange={(event) => setLogin({ ...login, username: event.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                    {member?.photo ? (
+                      <Image
+                        src={member.photo}
+                        alt={displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-semibold text-orange-600">
+                        {displayName.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">{displayName}</p>
+                    <p className="text-sm text-gray-500">{member?.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
-                  <input
-                    type="password"
-                    value={login.password}
-                    onChange={(event) => setLogin({ ...login, password: event.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  className="w-full px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
-                >
-                  {isLoggingIn ? 'Connexion...' : 'Se connecter'}
-                </button>
-              </form>
-              {loginMessage && (
-                <p className="mt-4 text-sm font-semibold text-gray-600">{loginMessage}</p>
-              )}
-              {hasSession && (
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="mt-4 text-sm font-semibold text-orange-600"
+                  className="px-6 py-3 rounded-full border border-orange-200 text-orange-600 font-semibold hover:bg-orange-50 transition"
                 >
                   Se déconnecter
                 </button>
-              )}
-            </div>
+              </div>
 
-            <div className="bg-white rounded-3xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Inscription</h2>
-              <form className="space-y-4" onSubmit={handleRegister}>
-                <div className="grid md:grid-cols-2 gap-4">
+              <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div className="bg-orange-50 rounded-2xl p-4">
+                  <p className="font-semibold text-gray-900">Nom d'utilisateur</p>
+                  <p>{member?.username ?? '-'}</p>
+                </div>
+                <div className="bg-orange-50 rounded-2xl p-4">
+                  <p className="font-semibold text-gray-900">Téléphone</p>
+                  <p>{member?.phone ?? '-'}</p>
+                </div>
+                <div className="bg-orange-50 rounded-2xl p-4">
+                  <p className="font-semibold text-gray-900">Quartier</p>
+                  <p>{member?.quartier ?? '-'}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-2 gap-8">
+              <div className="bg-white rounded-3xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Connexion</h2>
+                <form className="space-y-4" onSubmit={handleLogin}>
                   <div>
-                    <label className="text-sm font-semibold text-gray-700">Prénom</label>
+                    <label className="text-sm font-semibold text-gray-700">Nom d'utilisateur</label>
                     <input
                       type="text"
-                      value={register.first_name}
-                      onChange={(event) => setRegister({ ...register, first_name: event.target.value })}
+                      value={login.username}
+                      onChange={(event) => setLogin({ ...login, username: event.target.value })}
                       className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
                       required
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-semibold text-gray-700">Nom</label>
+                    <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
                     <input
-                      type="text"
-                      value={register.last_name}
-                      onChange={(event) => setRegister({ ...register, last_name: event.target.value })}
+                      type="password"
+                      value={login.password}
+                      onChange={(event) => setLogin({ ...login, password: event.target.value })}
                       className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
                       required
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Nom d'utilisateur</label>
-                  <input
-                    type="text"
-                    value={register.username}
-                    onChange={(event) => setRegister({ ...register, username: event.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                  {usernameError && (
-                    <p className="mt-2 text-xs text-red-500">{usernameError}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    value={register.email}
-                    onChange={(event) => setRegister({ ...register, email: event.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
-                  <input
-                    type="password"
-                    value={register.password}
-                    onChange={(event) => setRegister({ ...register, password: event.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                  <div className="mt-3">
-                    <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
-                      <div
-                        className={`h-full ${passwordStrength.color}`}
-                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
+                  >
+                    {isLoggingIn ? 'Connexion...' : 'Se connecter'}
+                  </button>
+                </form>
+                {loginMessage && (
+                  <p className="mt-4 text-sm font-semibold text-gray-600">{loginMessage}</p>
+                )}
+              </div>
+
+              <div className="bg-white rounded-3xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Inscription</h2>
+                <form className="space-y-4" onSubmit={handleRegister}>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700">Prénom</label>
+                      <input
+                        type="text"
+                        value={register.first_name}
+                        onChange={(event) => setRegister({ ...register, first_name: event.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        required
                       />
                     </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      Force du mot de passe : {passwordStrength.label}
-                    </p>
-                    <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs text-gray-500">
-                      <span className={passwordChecks.length ? 'text-green-600' : ''}>
-                        • 8 caractères minimum
-                      </span>
-                      <span className={passwordChecks.upper ? 'text-green-600' : ''}>
-                        • Une majuscule
-                      </span>
-                      <span className={passwordChecks.lower ? 'text-green-600' : ''}>
-                        • Une minuscule
-                      </span>
-                      <span className={passwordChecks.number ? 'text-green-600' : ''}>
-                        • Un chiffre
-                      </span>
-                      <span className={passwordChecks.special ? 'text-green-600' : ''}>
-                        • Un caractère spécial
-                      </span>
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700">Nom</label>
+                      <input
+                        type="text"
+                        value={register.last_name}
+                        onChange={(event) => setRegister({ ...register, last_name: event.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        required
+                      />
                     </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Confirmer le mot de passe</label>
-                  <input
-                    type="password"
-                    value={register.confirm_password}
-                    onChange={(event) =>
-                      setRegister({ ...register, confirm_password: event.target.value })
-                    }
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                  {!passwordsMatch && register.confirm_password.length > 0 && (
-                    <p className="mt-2 text-xs text-red-500">Les mots de passe ne correspondent pas.</p>
-                  )}
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-semibold text-gray-700">Téléphone</label>
+                    <label className="text-sm font-semibold text-gray-700">Nom d'utilisateur</label>
                     <input
                       type="text"
-                      value={register.phone}
-                      onChange={(event) => setRegister({ ...register, phone: event.target.value })}
+                      value={register.username}
+                      onChange={(event) => setRegister({ ...register, username: event.target.value })}
                       className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    />
+                    {usernameError && (
+                      <p className="mt-2 text-xs text-red-500">{usernameError}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700">Email</label>
+                    <input
+                      type="email"
+                      value={register.email}
+                      onChange={(event) => setRegister({ ...register, email: event.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-semibold text-gray-700">Quartier</label>
+                    <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
                     <input
-                      type="text"
-                      value={register.quartier}
-                      onChange={(event) => setRegister({ ...register, quartier: event.target.value })}
+                      type="password"
+                      value={register.password}
+                      onChange={(event) => setRegister({ ...register, password: event.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    />
+                    <div className="mt-3">
+                      <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                        <div
+                          className={`h-full ${passwordStrength.color}`}
+                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Force du mot de passe : {passwordStrength.label}
+                      </p>
+                      <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs text-gray-500">
+                        <span className={passwordChecks.length ? 'text-green-600' : ''}>
+                          • 8 caractères minimum
+                        </span>
+                        <span className={passwordChecks.upper ? 'text-green-600' : ''}>
+                          • Une majuscule
+                        </span>
+                        <span className={passwordChecks.lower ? 'text-green-600' : ''}>
+                          • Une minuscule
+                        </span>
+                        <span className={passwordChecks.number ? 'text-green-600' : ''}>
+                          • Un chiffre
+                        </span>
+                        <span className={passwordChecks.special ? 'text-green-600' : ''}>
+                          • Un caractère spécial
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700">Confirmer le mot de passe</label>
+                    <input
+                      type="password"
+                      value={register.confirm_password}
+                      onChange={(event) =>
+                        setRegister({ ...register, confirm_password: event.target.value })
+                      }
+                      className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    />
+                    {!passwordsMatch && register.confirm_password.length > 0 && (
+                      <p className="mt-2 text-xs text-red-500">Les mots de passe ne correspondent pas.</p>
+                    )}
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700">Téléphone</label>
+                      <input
+                        type="text"
+                        value={register.phone}
+                        onChange={(event) => setRegister({ ...register, phone: event.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700">Quartier</label>
+                      <input
+                        type="text"
+                        value={register.quartier}
+                        onChange={(event) => setRegister({ ...register, quartier: event.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700">Date de naissance</label>
+                    <input
+                      type="date"
+                      value={register.date_naissance}
+                      onChange={(event) => setRegister({ ...register, date_naissance: event.target.value })}
                       className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Date de naissance</label>
-                  <input
-                    type="date"
-                    value={register.date_naissance}
-                    onChange={(event) => setRegister({ ...register, date_naissance: event.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isRegistering}
-                  className="w-full px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
-                >
-                  {isRegistering ? 'Inscription...' : 'Créer un compte'}
-                </button>
-              </form>
-              {registerMessage && (
-                <p className="mt-4 text-sm font-semibold text-gray-600">{registerMessage}</p>
-              )}
+                  <button
+                    type="submit"
+                    disabled={isRegistering}
+                    className="w-full px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
+                  >
+                    {isRegistering ? 'Inscription...' : 'Créer un compte'}
+                  </button>
+                </form>
+                {registerMessage && (
+                  <p className="mt-4 text-sm font-semibold text-gray-600">{registerMessage}</p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="mt-12 bg-gradient-to-r from-orange-50 to-red-50 rounded-3xl p-8">
             <h3 className="text-xl font-bold text-gray-900 mb-2">Espace staff</h3>
