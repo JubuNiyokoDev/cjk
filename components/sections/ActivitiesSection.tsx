@@ -1,4 +1,5 @@
-﻿'use client';
+﻿/* eslint-disable react/no-unescaped-entities */
+'use client';
 
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
@@ -111,7 +112,7 @@ export default function ActivitiesSection({ items }: ActivitiesSectionProps) {
                 <div className={`h-2 bg-gradient-to-r ${activity.color}`} />
                 <div className="p-8">
                   <div
-                    className={`w-16 h-16 rounded-full bg-gradient-to-br ${activity.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
+                    className={`w-16 h-16 rounded-md bg-gradient-to-br ${activity.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
                   >
                     <activity.icon className="w-8 h-8 text-white" />
                   </div>
@@ -134,7 +135,7 @@ export default function ActivitiesSection({ items }: ActivitiesSectionProps) {
           {activityTypes.map((type) => (
             <span
               key={type}
-              className="px-4 py-2 rounded-full bg-white shadow text-sm font-semibold text-gray-700"
+              className="px-4 py-2 rounded-md bg-white shadow text-sm font-semibold text-gray-700"
             >
               {getActivityLabel(type)}
             </span>
@@ -149,13 +150,13 @@ export default function ActivitiesSection({ items }: ActivitiesSectionProps) {
         >
           <Link
             href="/activities"
-            className="px-8 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+            className="px-8 py-3 rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
           >
             Voir les activités
           </Link>
           <Link
             href="/auth"
-            className="px-8 py-3 rounded-full border-2 border-orange-500 text-orange-600 font-semibold hover:bg-orange-50 transition-all"
+            className="px-8 py-3 rounded-md border border-orange-500 text-orange-600 font-semibold hover:bg-orange-50 transition-all"
           >
             Se connecter pour proposer
           </Link>

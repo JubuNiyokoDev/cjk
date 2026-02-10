@@ -91,9 +91,9 @@ export default function LikeButton({
       onClick={handleToggle}
       disabled={isDisabled || isLoading}
       className={cn(
-        'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+        'inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition',
         liked
-          ? 'border-red-500 text-red-600 bg-red-50'
+          ? 'border-red-300 text-red-600 bg-red-50'
           : 'border-gray-200 text-gray-700 hover:border-red-200 hover:text-red-500',
         isDisabled || isLoading ? 'opacity-60 cursor-not-allowed' : ''
       )}

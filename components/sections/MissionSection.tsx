@@ -70,11 +70,11 @@ export default function MissionSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.2 }}
               whileHover={{ y: -10, transition: { duration: 0.3 } }}
-              className="bg-white rounded-3xl shadow-xl overflow-hidden"
+              className="bg-white rounded-xl shadow-xl overflow-hidden"
             >
               <div className={`bg-gradient-to-br ${card.color} p-8 text-white`}>
-                <card.icon className="w-12 h-12 mb-4" />
-                <h3 className="text-3xl font-bold">{card.title}</h3>
+                <card.icon className="w-10 h-10 mb-4" />
+                <h3 className="text-xl font-bold">{card.title}</h3>
               </div>
               <div className="p-8">
                 <ul className="space-y-4">

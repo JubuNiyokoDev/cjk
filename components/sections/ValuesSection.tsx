@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import { motion } from 'framer-motion';
@@ -63,9 +64,9 @@ export default function ValuesSection() {
           initial={{ opacity: 0, y: 50 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl p-12 text-center text-white"
+          className="mt-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-12 text-center text-white"
         >
-          <blockquote className="text-3xl md:text-4xl font-bold mb-4">
+          <blockquote className="text-2xl md:text-4xl font-bold mb-4">
             "Ensemble pour bâtir un monde de frères"
           </blockquote>
           <p className="text-xl opacity-90">Notre devise</p>

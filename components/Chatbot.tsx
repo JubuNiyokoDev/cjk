@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
   id: string;
@@ -16,6 +17,7 @@ interface Message {
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showPopover, setShowPopover] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -34,6 +36,13 @@ export default function Chatbot() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (showPopover) {
+      const audio = new Audio('/notification.mp3');
+      audio.play().catch(() => { });
+    }
+  }, [showPopover]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -93,109 +102,169 @@ export default function Chatbot() {
 
   return (
     <>
-      {/* Floating Button */}
-      {!isOpen && (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 z-50 transition-all duration-300 hover:scale-110"
-          size="icon"
-        >
-          <MessageCircle className="h-6 w-6 text-white" />
-        </Button>
-      )}
-
-      {/* Chat Window */}
-      {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-gray-200">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-white">
-                <AvatarFallback className="bg-white text-blue-600 font-bold">
-                  CJK
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-white font-semibold">Assistant CJK</h3>
-                <p className="text-blue-100 text-xs">En ligne</p>
+      {/* Popover Notification */}
+      <AnimatePresence>
+        {showPopover && !isOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed bottom-24 right-6 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-xs"
+          >
+            <button
+              onClick={() => setShowPopover(false)}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex items-start gap-3">
+              
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">Assistant CJK</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {messages[0].text}
+                </p>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Button */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          >
             <Button
-              onClick={() => setIsOpen(false)}
-              variant="ghost"
+              onClick={() => setIsOpen(true)}
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-md shadow-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 z-50 transition-all duration-300 hover:scale-110"
               size="icon"
-              className="text-white hover:bg-white/20"
             >
-              <X className="h-5 w-5" />
+              <MessageCircle className="h-6 w-6 text-white" />
             </Button>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.sender === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                      message.sender === 'user'
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        message.sender === 'user'
-                          ? 'text-blue-100'
-                          : 'text-gray-500'
-                      }`}
-                    >
-                      {message.timestamp.toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
+      {/* Chat Window */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed w-full sm:w-96 h-[100vh] sm:h-[600px] top-0 left-0 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 bg-white sm:rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border-0 sm:border border-gray-200"
+          >
+            {/* Header */}
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 border-2 border-white">
+                  <AvatarFallback className="bg-white text-blue-600 font-bold">
+                    CJK
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-white font-semibold">Assistant CJK</h3>
+                  <p className="text-blue-100 text-xs">En ligne</p>
                 </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                    <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* Input */}
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Écrivez votre message..."
-                className="flex-1 rounded-full border-gray-300 focus:border-blue-500"
-                disabled={isLoading}
-              />
+              </div>
               <Button
-                onClick={sendMessage}
-                disabled={!input.trim() || isLoading}
-                className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                onClick={() => setIsOpen(false)}
+                variant="ghost"
                 size="icon"
+                className="text-white hover:bg-white/20"
               >
-                <Send className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+              <div className="space-y-4">
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-2 ${message.sender === 'user'
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-800'
+                        }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                      <p
+                        className={`text-xs mt-1 ${message.sender === 'user'
+                            ? 'text-blue-100'
+                            : 'text-gray-500'
+                          }`}
+                      >
+                        {message.timestamp.toLocaleTimeString('fr-FR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+                {isLoading && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Input */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="p-4 border-t border-gray-200 bg-gray-50"
+            >
+              <div className="flex gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Écrivez votre message..."
+                  className="flex-1 rounded-md border-gray-300 focus:border-blue-500"
+                  disabled={isLoading}
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || isLoading}
+                  className="rounded-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  size="icon"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -24,7 +24,7 @@ export default async function Home() {
   const sortedNews = sortByDateDesc(news);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white w-full overflow-hidden">
       <Navigation />
       <HeroSection />
       <AboutSection />

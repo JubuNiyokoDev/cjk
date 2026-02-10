@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthSession } from '@/hooks/use-auth-session';
+import Image from 'next/image';
 
 const navItems = [
   { name: 'Accueil', href: '/#home' },
@@ -40,9 +41,8 @@ export default function Navigation() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
-      }`}
+      className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
@@ -52,7 +52,7 @@ export default function Navigation() {
             transition={{ delay: 0.2 }}
             className="flex items-center space-x-3"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-md flex items-center justify-center text-white font-bold text-xl">
               CJK
             </div>
             <div>
@@ -86,19 +86,23 @@ export default function Navigation() {
           <div className="hidden md:flex items-center gap-4">
             {isLoading ? null : isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden border border-orange-200">
                   {member?.photo ? (
-                    <img
+                    <Image
                       src={member.photo}
                       alt={displayName}
                       className="h-full w-full object-cover"
+                      width={20}
+                      height={20}
                     />
                   ) : (
                     <span className="text-sm font-semibold text-orange-600">{initial}</span>
                   )}
                 </div>
                 <div className="text-sm">
-                  <p className="font-semibold text-gray-900">{displayName}</p>
+                  <Link href="/profile" className="font-semibold text-gray-900 hover:text-orange-500 transition">
+                    <p className="font-semibold text-gray-900">{displayName}</p>
+                  </Link>
                   <button
                     type="button"
                     onClick={logout}
@@ -111,7 +115,7 @@ export default function Navigation() {
             ) : (
               <Link
                 href="/auth"
-                className="px-4 py-2 rounded-full border border-orange-200 text-orange-600 font-semibold hover:bg-orange-50 transition"
+                className="px-4 py-2 rounded-md border border-orange-200 text-orange-600 font-semibold hover:bg-orange-50 transition"
               >
                 Se connecter
               </Link>
@@ -151,17 +155,19 @@ export default function Navigation() {
               {isLoading ? null : isAuthenticated ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
-                      {member?.photo ? (
-                        <img
-                          src={member.photo}
-                          alt={displayName}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-sm font-semibold text-orange-600">{initial}</span>
-                      )}
-                    </div>
+                    <Link href="/profile">
+                      <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                        {member?.photo ? (
+                          <img
+                            src={member.photo}
+                            alt={displayName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-semibold text-orange-600">{initial}</span>
+                        )}
+                      </div>
+                    </Link>
                     <p className="text-sm font-semibold text-gray-900">{displayName}</p>
                   </div>
                   <button
@@ -178,7 +184,7 @@ export default function Navigation() {
               ) : (
                 <Link
                   href="/auth"
-                  className="inline-flex items-center justify-center w-full px-4 py-2 rounded-full border border-orange-200 text-orange-600 font-semibold hover:bg-orange-50 transition"
+                  className="inline-flex items-center justify-center w-full px-4 py-2 rounded-md border border-orange-200 text-orange-600 font-semibold hover:bg-orange-50 transition"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Se connecter

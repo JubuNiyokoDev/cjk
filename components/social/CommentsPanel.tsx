@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, Pencil, Save } from 'lucide-react';
+import { Trash2, Pencil, Save, Send, SendHorizontal } from 'lucide-react';
 import {
   createComment,
   deleteComment,
@@ -134,28 +134,46 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8">
+    <div className="bg-white p-6 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">{header}</h2>
+        <h2 className="text-xl font-bold text-gray-900">{header}</h2>
         <span className="text-sm font-semibold text-gray-500">
           {comments.length} commentaire{comments.length > 1 ? 's' : ''}
         </span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3 mb-6">
-        <textarea
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          rows={4}
-          className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-          placeholder="Écrire un commentaire..."
-        />
-        <button
-          type="submit"
-          className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-        >
-          Publier
-        </button>
+      <form onSubmit={handleSubmit} className="mb-6">
+        <div className="relative flex items-end gap-2">
+          <div className="flex-1 relative">
+            <textarea
+              value={message}
+              onChange={(e) => {
+                if (e.target.value.length <= 300) {
+                  setMessage(e.target.value);
+                }
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+              }}
+              rows={1}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none overflow-hidden text-ellipsis text-xs"
+              placeholder="Écrire un commentaire..."
+              style={{ minHeight: '100px', maxHeight: '300px' }}
+            />
+            <div className="absolute bottom-2 right-3 text-xs text-gray-400  inline-flex items-center ">
+            <span> {message.length}/300</span> 
+              <button
+              type="submit"
+              disabled={!message.trim()}
+              className="p-1  ml-2  text-white hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Publier"
+            >
+                <SendHorizontal className="w-5 h-5 text-orange-500 to-red-500" />
+            </button>
+            </div>
+            
+          </div>
+
+        </div>
       </form>
 
       {status && <p className="text-sm text-red-500 mb-4">{status}</p>}
@@ -168,7 +186,7 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
               className="border border-gray-100 rounded-2xl p-4 animate-pulse"
             >
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gray-200" />
+                <div className="h-10 w-10 rounded-md bg-gray-200" />
                 <div className="flex-1">
                   <div className="h-3 w-32 bg-gray-200 rounded" />
                   <div className="mt-2 h-2 w-20 bg-gray-200 rounded" />
@@ -192,7 +210,7 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
             <div key={comment.id} className="border border-gray-100 rounded-2xl p-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                  <div className="h-10 w-10 rounded-md bg-orange-100 flex items-center justify-center overflow-hidden">
                     {comment.user_photo ? (
                       <img
                         src={comment.user_photo}
@@ -238,12 +256,25 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
 
               {draft?.id === comment.id ? (
                 <div className="mt-3 space-y-2">
-                  <textarea
-                    value={draft.value}
-                    onChange={(event) => setDraft({ id: comment.id, value: event.target.value })}
-                    rows={3}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
+                  <div className="relative">
+                    <textarea
+                      value={draft.value}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 300) {
+                          setDraft({ id: comment.id, value: e.target.value });
+                        }
+                        // Auto-resize
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      rows={1}
+                      className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:outline-none focus:ring-1 text-xs focus:ring-orange-500 resize-none overflow-hidden"
+                      style={{ minHeight: '100px', maxHeight: '200px' }}
+                    />
+                    <div className="absolute bottom-2 right-3 text-xs text-gray-400">
+                      {draft.value.length}/300
+                    </div>
+                  </div>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -262,7 +293,7 @@ export default function CommentsPanel({ contentType, objectId, title }: Comments
                   </div>
                 </div>
               ) : (
-                <p className="mt-3 text-gray-700 whitespace-pre-line">
+                <p className="mt-3 ml-12 text-gray-700 text-sm whitespace-pre-line">
                   {comment.text ?? comment.content ?? ''}
                 </p>
               )}

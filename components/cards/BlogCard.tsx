@@ -20,7 +20,7 @@ export default function BlogCard({ post, variant = 'full' }: BlogCardProps) {
     <Link href={`/blog/${post.id}`} className="block h-full">
       <div
         className={cn(
-          'h-full bg-white rounded-2xl shadow-lg overflow-hidden group transition-transform hover:-translate-y-1',
+          'h-full bg-white rounded-md shadow-lg overflow-hidden group transition-transform hover:-translate-y-1',
           isCompact ? 'min-h-[360px]' : 'min-h-[420px]'
         )}
       >
@@ -37,11 +37,11 @@ export default function BlogCard({ post, variant = 'full' }: BlogCardProps) {
             <BookOpen className="w-10 h-10 text-white" />
           </div>
         )}
-        <div className="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-700">
+        <div className="absolute top-4 right-4 flex items-center gap-2 rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-gray-700">
           <Heart className={cn('h-4 w-4', post.is_liked ? 'fill-red-500 text-red-500' : 'text-gray-400')} />
           <span>{post.likes_count ?? 0}</span>
         </div>
-        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white/90 text-sm font-semibold text-orange-600">
+        <div className="absolute top-4 left-4 px-3 py-1 rounded-md bg-white/90 text-sm font-semibold text-orange-600">
           {post.category_name}
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function BlogCard({ post, variant = 'full' }: BlogCardProps) {
             <span>•</span>
             <span>{post.author_name}</span>
           </div>
-          <h3 className={cn('font-bold text-gray-900', isCompact ? 'text-xl' : 'text-2xl')}>
+          <h3 className={cn('font-bold text-gray-900', isCompact ? 'text-md' : 'text-xl')}>
             {post.title}
           </h3>
           <p className="text-gray-600">{getExcerpt(post.content, isCompact ? 120 : 160)}</p>

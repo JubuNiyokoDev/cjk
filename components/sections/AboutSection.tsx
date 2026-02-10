@@ -1,9 +1,11 @@
+/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { Users, Heart, Globe, Award } from 'lucide-react';
+import ReadButton from '@/lib/speak';
 
 const stats = [
   { icon: Users, value: '50,788', label: 'Jeunes membres' },
@@ -42,6 +44,7 @@ export default function AboutSection() {
             <h3 className="text-3xl font-bold mb-6 text-gray-900">
               Notre Histoire
             </h3>
+            <ReadButton />
             <div className="space-y-4 text-gray-700 leading-relaxed">
               <p>
                 Le Centre Jeunes Kamenge est l'un des grands centres sociaux de la commune de
@@ -66,22 +69,22 @@ export default function AboutSection() {
             initial={{ opacity: 0, x: 50 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-gradient-to-br from-orange-50 to-red-50 rounded-3xl p-8"
+            className="bg-gradient-to-br from-orange-50 to-red-50 rounded-3xl sm:p-8 p-1"
           >
             <h3 className="text-3xl font-bold mb-6 text-gray-900">
               Notre Impact
             </h3>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 sm:gap-6 gap-4">
               {stats.map((stat, index) => (
                 <motion.div
                   key={stat.label}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={isInView ? { opacity: 1, scale: 1 } : {}}
                   transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
-                  className="bg-white rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-shadow"
+                  className="bg-white rounded-2xl  p-6 text-center shadow-lg hover:shadow-xl transition-shadow"
                 >
                   <stat.icon className="w-8 h-8 mx-auto mb-3 text-orange-500" />
-                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                  <div className="sm:text-3xl  text-base font-bold text-gray-900 mb-2">
                     {stat.value}
                   </div>
                   <div className="text-sm text-gray-600">{stat.label}</div>

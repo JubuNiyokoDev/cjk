@@ -32,7 +32,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8 mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 md:p-8 mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Espace membre</h2>
               <p className="text-gray-600">
@@ -41,7 +41,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             </div>
             <Link
               href="/auth"
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="px-6 py-3 rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               Se connecter ou créer un compte
             </Link>
@@ -50,7 +50,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
             <Link
               href="/blog"
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 !category
                   ? 'bg-orange-500 text-white shadow'
                   : 'bg-white text-gray-700 shadow hover:bg-orange-50'
@@ -62,7 +62,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
               <Link
                 key={cat.id}
                 href={`/blog?category=${cat.id}`}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                   category === String(cat.id)
                     ? 'bg-orange-500 text-white shadow'
                     : 'bg-white text-gray-700 shadow hover:bg-orange-50'
@@ -74,7 +74,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           </div>
 
           {sortedPosts.length === 0 ? (
-            <div className="bg-white rounded-3xl shadow-lg p-10 text-center">
+            <div className="bg-white rounded-md shadow-lg p-10 text-center">
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Aucun article disponible</h3>
               <p className="text-gray-600">Les publications apparaîtront ici dès qu&apos;elles seront en ligne.</p>
             </div>

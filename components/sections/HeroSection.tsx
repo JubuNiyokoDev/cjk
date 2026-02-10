@@ -35,7 +35,7 @@ export default function HeroSection() {
           transition={{ type: 'spring', duration: 1 }}
           className="mb-8"
         >
-          <div className="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center shadow-2xl">
+          <div className="w-32 h-32 mx-auto bg-white rounded-md flex items-center justify-center shadow-2xl">
             <span className="text-6xl font-bold bg-gradient-to-br from-orange-500 to-red-500 bg-clip-text text-transparent">
               CJK
             </span>
@@ -77,13 +77,13 @@ export default function HeroSection() {
         >
           <a
             href="#about"
-            className="px-8 py-4 bg-white text-orange-500 rounded-full font-semibold hover:bg-orange-50 transition-all transform hover:scale-105 shadow-lg"
+            className="px-8 py-4 bg-white text-orange-500 rounded-md font-semibold hover:bg-orange-50 transition-all transform hover:scale-105 shadow-lg"
           >
             Découvrir le CJK
           </a>
           <a
             href="#contact"
-            className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full font-semibold hover:bg-white hover:text-orange-500 transition-all transform hover:scale-105"
+            className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-md font-semibold hover:bg-white hover:text-orange-500 transition-all transform hover:scale-105"
           >
             Nous contacter
           </a>

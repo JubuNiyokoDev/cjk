@@ -66,13 +66,13 @@ export default function NewsSection({ items }: NewsSectionProps) {
         >
           <Link
             href="/news"
-            className="px-8 py-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+            className="px-8 py-3 rounded-md bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
           >
             Voir toutes les actualités
           </Link>
           <Link
             href="/auth"
-            className="px-8 py-3 rounded-full border-2 border-blue-500 text-blue-600 font-semibold hover:bg-blue-50 transition-all"
+            className="px-8 py-3 rounded-md border-2 border-blue-500 text-blue-600 font-semibold hover:bg-blue-50 transition-all"
           >
             Accès staff
           </Link>

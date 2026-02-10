@@ -86,7 +86,7 @@ export default function HistorySection() {
                 } flex-col md:flex-row`}
               >
                 <div className={`flex-1 ${index % 2 === 0 ? 'md:text-right' : 'md:text-left'} text-center md:text-inherit`}>
-                  <div className={`inline-block bg-gradient-to-br ${event.color} text-white px-6 py-2 rounded-full font-bold text-lg mb-4`}>
+                  <div className={`inline-block bg-gradient-to-br ${event.color} text-white px-6 py-2 rounded-md font-bold text-lg mb-4`}>
                     {event.year}
                   </div>
                   <h3 className="text-2xl font-bold mb-3 text-gray-900">
@@ -98,7 +98,7 @@ export default function HistorySection() {
                 </div>
 
                 <div className="relative z-10 flex-shrink-0">
-                  <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${event.color} flex items-center justify-center shadow-xl`}>
+                  <div className={`w-20 h-20 rounded-md bg-gradient-to-br ${event.color} flex items-center justify-center shadow-xl`}>
                     <event.icon className="w-10 h-10 text-white" />
                   </div>
                 </div>

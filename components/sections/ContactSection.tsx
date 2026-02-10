@@ -67,7 +67,7 @@ export default function ContactSection() {
               whileHover={{ y: -10, scale: 1.02 }}
               className="bg-white rounded-2xl shadow-lg p-8 text-center"
             >
-              <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center`}>
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-md bg-gradient-to-br ${item.color} flex items-center justify-center`}>
                 <item.icon className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-gray-900">
@@ -94,13 +94,13 @@ export default function ContactSection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="mailto:centrejeuneskamenge@yahoo.fr"
-              className="px-8 py-4 bg-white text-orange-500 rounded-full font-semibold hover:bg-orange-50 transition-all transform hover:scale-105 shadow-lg"
+              className="px-8 py-4 bg-white text-orange-500 rounded-md font-semibold hover:bg-orange-50 transition-all transform hover:scale-105 shadow-lg"
             >
               Devenir membre
             </a>
             <a
               href="tel:+25779921760"
-              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full font-semibold hover:bg-white hover:text-orange-500 transition-all transform hover:scale-105"
+              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-md font-semibold hover:bg-white hover:text-orange-500 transition-all transform hover:scale-105"
             >
               Nous appeler
             </a>
