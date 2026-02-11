@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import TopLoader from '@/components/TopLoader';
 import Chatbot from '@/components/Chatbot';
+import { Toaster } from '@/components/ui/toaster';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -45,6 +46,7 @@ export default function RootLayout({
         <TopLoader />
         {children}
         <Chatbot />
+        <Toaster />
       </body>
     </html>
   );

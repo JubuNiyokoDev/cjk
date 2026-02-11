@@ -12,12 +12,14 @@ type AuthSession = {
   isLoading: boolean;
   refresh: () => Promise<void>;
   logout: () => void;
+  isOfficialMember:boolean;
 };
 
 export function useAuthSession(): AuthSession {
   const [member, setMember] = useState<Member | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOfficialMember, setIsOfficialMember] = useState(false);
 
   const loadSession = useCallback(async () => {
     setIsLoading(true);
@@ -47,6 +49,9 @@ export function useAuthSession(): AuthSession {
       const data = (await response.json()) as Member;
       setMember(data);
       setIsAuthenticated(true);
+      if(data.is_staff || data.is_superuser) {
+        setIsOfficialMember(true);
+      }
     } catch {
       setMember(null);
       setIsAuthenticated(false);
@@ -65,5 +70,5 @@ export function useAuthSession(): AuthSession {
     setIsAuthenticated(false);
   }, []);
 
-  return { member, isAuthenticated, isLoading, refresh: loadSession, logout };
+  return { member, isAuthenticated, isLoading, refresh: loadSession, logout, isOfficialMember };
 }

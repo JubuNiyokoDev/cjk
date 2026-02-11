@@ -1,4 +1,10 @@
-﻿import type { Activity, BlogCategory, BlogPost, NewsItem } from './types';
+﻿export async function getNewsItem(id: number) {
+  return safeFetch<NewsItem>(`/api/news/${id}/`, undefined, { cache: 'no-store' });
+}
+export async function getActivity(id: number) {
+  return safeFetch<Activity>(`/api/activities/${id}/`, undefined, { cache: 'no-store' });
+}
+import type { Activity, BlogCategory, BlogPost, NewsItem } from './types';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
@@ -49,7 +55,11 @@ async function safeFetch<T>(
     const tokens = getTokens();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
+      ...(typeof init?.headers === 'object' && init?.headers !== null && !Array.isArray(init.headers)
+        ? Object.fromEntries(
+            Object.entries(init.headers).map(([key, value]) => [key, String(value)])
+          )
+        : {}),
     };
     if (tokens?.access) {
       headers.Authorization = `Bearer ${tokens.access}`;

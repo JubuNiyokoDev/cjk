@@ -35,9 +35,9 @@ export default function HeroSection() {
           transition={{ type: 'spring', duration: 1 }}
           className="mb-8"
         >
-          <div className="w-32 h-32 mx-auto bg-white rounded-md flex items-center justify-center shadow-2xl">
+          <div className="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center shadow-2xl">
             <span className="text-6xl font-bold bg-gradient-to-br from-orange-500 to-red-500 bg-clip-text text-transparent">
-              CJK
+              <img src="/logo.jpeg" className="h-full w-full object-cover rounded-full inset-0" alt="CJK Logo" />
             </span>
           </div>
         </motion.div>

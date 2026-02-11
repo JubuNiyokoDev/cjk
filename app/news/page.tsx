@@ -23,7 +23,7 @@ export default async function NewsPage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8 mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="bg-white rounded-xl shadow-md p-6 md:p-8 mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Accès réservé au staff</h2>
               <p className="text-gray-600">
@@ -32,7 +32,7 @@ export default async function NewsPage() {
             </div>
             <Link
               href="/auth"
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="px-6 py-3 rounded-md bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               Connexion staff
             </Link>

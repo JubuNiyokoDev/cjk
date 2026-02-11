@@ -1,4 +1,5 @@
-﻿'use client';
+﻿/* eslint-disable @next/next/no-img-element */
+'use client';
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,8 +53,8 @@ export default function Navigation() {
             transition={{ delay: 0.2 }}
             className="flex items-center space-x-3"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-md flex items-center justify-center text-white font-bold text-xl">
-              CJK
+            <div className="w-12 h-12 border border-red-500 bg-gradient-to-br from-orange-500 to-red-500 rounded-md flex items-center justify-center text-white font-bold text-xl">
+             <img src="/logo.jpeg" className="h-full w-full object-cover rounded-md inset-0" alt="CJK Logo" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">

@@ -1,4 +1,6 @@
-﻿import Link from 'next/link';
+﻿'use client';
+
+import Link from 'next/link';
 import { Suspense } from 'react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -8,6 +10,7 @@ import { getBlogPost, API_BASE_URL } from '@/lib/api';
 import { formatDate, resolveImageUrl } from '@/lib/content';
 import { BookOpen, ChevronLeft } from 'lucide-react';
 import Loading from './loading';
+import MDEditor from '@uiw/react-md-editor';
 
 const BLOG_CONTENT_TYPE = (process.env.NEXT_PUBLIC_BLOG_CONTENT_TYPE ?? '').trim();
 
@@ -64,9 +67,9 @@ async function BlogPostContent({ postId }: { postId: number }) {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             {post.title}
           </h1>
-          <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-            {post.content}
-          </p>
+          <div className="prose max-w-none text-gray-700">
+            <MDEditor.Markdown source={post.content} />
+          </div>
         </div>
         <div className="border-t border-gray-100 px-6 sm:px-8 py-4 flex flex-wrap gap-4 items-center justify-between">
           <LikeButton

@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Navigation from '@/components/Navigation';
@@ -9,10 +9,34 @@ import Footer from '@/components/Footer';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { User, Mail, Phone, MapPin, Calendar, LogOut, Settings } from 'lucide-react';
 import StatusCard from '@/components/cards/StatusCard';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import BlogCard from '@/components/cards/BlogCard';
+import { sortByDateDesc } from '@/lib/content';
+import { getBlogPosts, getNews, getActivities } from '@/lib/api';
+import NewsCard from '@/components/cards/NewsCard';
+import ActivityCard from '@/components/cards/ActivityCard';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { member, isAuthenticated, isLoading, logout } = useAuthSession();
+  const { member, isAuthenticated, isLoading, logout, isOfficialMember } = useAuthSession();
+  const [posts, setPosts] = useState<any[]>([]);
+  const [news, setNews] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      getBlogPosts().then(setPosts).finally(() => setPostsLoading(false));
+      getNews().then(setNews).finally(() => setNewsLoading(false));
+      getActivities().then(setActivities).finally(() => setActivitiesLoading(false));
+    }
+  }, [isAuthenticated]);
+
+  const sortedPosts = sortByDateDesc(posts);
+  const sortedNews = sortByDateDesc(news);
+  const sortedActivities = sortByDateDesc(activities);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -75,7 +99,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <button className="absolute -bottom-2 -right-2 p-2.5 bg-white shadow-lg rounded-xl text-slate-400 hover:text-orange-500 transition-colors border border-slate-50">
+              <button className="absolute -bottom-2 -right-2 p-2.5 bg-white shadow-lg rounded-md text-slate-400 hover:text-orange-500 transition-colors border border-slate-50">
                 <Settings className="w-4 h-4" />
               </button>
             </div>
@@ -86,16 +110,19 @@ export default function ProfilePage() {
               </h1>
               <div className="flex items-center space-x-2 mt-1 justify-center md:justify-start">
                 <p className="text-slate-500 text-lg">@{member.username}</p>
-                <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-semibold tracking-wider rounded-md">
-                  Membre Officiel
-                </span>
+                {
+                  isOfficialMember && <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-semibold tracking-wider rounded-md">
+                    Membre Officiel
+                  </span>
+                }
+
               </div>
             </div>
 
 
             <button
               onClick={logout}
-              className="flex items-center gap-2 px-6 py-3 bg-white text-red-500 font-semibold rounded-2xl shadow-sm border border-red-50 hover:bg-red-50 transition-all active:scale-95"
+              className="flex items-center gap-2 px-6 py-3 bg-white text-red-500 font-semibold rounded-md shadow-sm border border-red-50 hover:bg-red-50 transition-all active:scale-95"
             >
               <LogOut className="w-4 h-4" />
               Déconnexion
@@ -135,17 +162,133 @@ export default function ProfilePage() {
                 statusColor="orange-500"                     // couleur du statut
               />
 
+              {
+                !isOfficialMember && <div className="bg-orange-50 rounded-[12px] p-8 border border-orange-100">
+                  <p className="text-orange-800 font-semibold mb-2">Besoin d'aide ?</p>
+                  <p className="text-orange-600/80 text-sm leading-relaxed">
+                    Vous souhaitez modifier vos informations ? Contactez le support technique.
+                  </p>
+                </div>
+              }
 
-              <div className="bg-orange-50 rounded-[12px] p-8 border border-orange-100">
-                <p className="text-orange-800 font-semibold mb-2">Besoin d'aide ?</p>
-                <p className="text-orange-600/80 text-sm leading-relaxed">
-                  Vous souhaitez modifier vos informations ? Contactez le support technique.
-                </p>
-              </div>
             </div>
 
           </div>
         </div>
+      </section>
+      {        /* Section des contenus personnels (Blogs, Actualités, Activités) */}
+      {!isOfficialMember && <div className="max-w-5xl mx-auto px-6 mb-10">
+        <div className="bg-orange-50 rounded-[12px] p-8 border border-orange-100">
+          <p className="text-orange-800 font-semibold mb-2">Contenus personnels</p>
+        </div>
+      </div>
+
+
+      }
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <Tabs defaultValue="blog" className="w-full">
+          <TabsList className="w-full justify-start bg-white border border-slate-200 p-1.5 rounded-md shadow-sm">
+            <TabsTrigger
+              value="blog"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
+            >
+              Blogs {sortedPosts.length}
+            </TabsTrigger>
+            <TabsTrigger
+              value="news"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
+            >
+              Actualités {sortedNews.length}
+            </TabsTrigger>
+            <TabsTrigger
+              value="activity"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
+            >
+              Activités {sortedActivities.length}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="blog" className="mt-8">
+            {postsLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
+                    <div className="h-48 bg-slate-200" />
+                    <div className="p-6 space-y-3">
+                      <div className="h-4 bg-slate-200 rounded w-3/4" />
+                      <div className="h-4 bg-slate-200 rounded w-1/2" />
+                      <div className="h-20 bg-slate-200 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : sortedPosts.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {sortedPosts.map((post) => (
+                  <BlogCard key={post.id} post={post} showActions={true}/>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-slate-400 text-lg">Aucun blog disponible</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="news" className="mt-8">
+            {newsLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
+                    <div className="h-48 bg-slate-200" />
+                    <div className="p-6 space-y-3">
+                      <div className="h-4 bg-slate-200 rounded w-3/4" />
+                      <div className="h-4 bg-slate-200 rounded w-1/2" />
+                      <div className="h-20 bg-slate-200 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : sortedNews.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {sortedNews.map((item) => (
+                  <NewsCard key={item.id} item={item} showActions={true} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-slate-400 text-lg">Aucune actualité disponible</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="activity" className="mt-8">
+            {activitiesLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
+                    <div className="h-48 bg-slate-200" />
+                    <div className="p-6 space-y-3">
+                      <div className="h-4 bg-slate-200 rounded w-3/4" />
+                      <div className="h-4 bg-slate-200 rounded w-1/2" />
+                      <div className="h-20 bg-slate-200 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : sortedActivities.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {sortedActivities.map((item) => (
+                  <ActivityCard key={item.id} activity={item} showActions={true} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-slate-400 text-lg">Aucune activité disponible</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </section>
 
       <Footer />

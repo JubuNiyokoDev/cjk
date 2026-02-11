@@ -9,6 +9,9 @@
   date_naissance: string | null;
   photo: string | null;
   date_inscription: string;
+  is_active_member: boolean;
+  is_staff: boolean | null;
+  is_superuser: boolean | null;
 };
 
 export type BlogCategory = {

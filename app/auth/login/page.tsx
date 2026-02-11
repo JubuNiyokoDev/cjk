@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
@@ -27,6 +27,13 @@ export default function LoginPage() {
   const [login, setLogin] = useState<LoginState>(initialLogin);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { isAuthenticated } = useAuthSession();
+
+  useEffect(()=>{
+    if(isAuthenticated) {
+      router.push('/');
+    }
+  },[isAuthenticated, router]);
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();

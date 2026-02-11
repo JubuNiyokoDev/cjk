@@ -1,13 +1,14 @@
 /* eslint-disable react/no-unescaped-entities */
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { API_BASE_URL } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthSession } from '@/hooks/use-auth-session';
 
 type RegisterState = {
   username: string;
@@ -81,6 +82,13 @@ export default function RegisterPage() {
   const [register, setRegister] = useState<RegisterState>(initialRegister);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+const { isAuthenticated } = useAuthSession();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
 
   const passwordChecks = getPasswordChecks(register.password);
   const passwordStrength = getPasswordStrength(register.password);
