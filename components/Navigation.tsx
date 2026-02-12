@@ -3,19 +3,32 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import Image from 'next/image';
 
 const navItems = [
-  { name: 'Accueil', href: '/#home' },
-  { name: 'À propos', href: '/#about' },
-  { name: 'Mission', href: '/#mission' },
-  { name: 'Activités', href: '/#activities' },
-  { name: 'Blog', href: '/#blog' },
-  { name: 'Actualités', href: '/#news' },
-  { name: 'Histoire', href: '/#history' },
+  { name: 'Accueil', href: '/' },
+  { 
+    name: 'À propos', 
+    submenu: [
+      { name: 'Notre histoire', href: '/#history' },
+      { name: 'Mission', href: '/#mission' },
+      { name: 'Notre équipe', href: '/about' },
+    ]
+  },
+  { 
+    name: 'Contenus', 
+    submenu: [
+      { name: 'Blog', href: '/blog' },
+      { name: 'Actualités', href: '/news' },
+      { name: 'Activités', href: '/activities' },
+      { name: 'Galerie', href: '/gallery' },
+    ]
+  },
+  { name: 'Galerie', href: '/#gallery' },
+  { name: 'Créer Galerie', href: '/admin/gallery' },
   { name: 'Contact', href: '/#contact' },
 ];
 
@@ -73,13 +86,33 @@ export default function Navigation() {
                 transition={{ delay: 0.1 * index }}
                 className="relative group"
               >
-                <Link
-                  href={item.href}
-                  className="text-gray-700 hover:text-orange-500 transition-colors font-medium relative group"
-                >
-                  {item.name}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-red-500 group-hover:w-full transition-all duration-300" />
-                </Link>
+                {item.submenu ? (
+                  <>
+                    <button className="text-gray-700 hover:text-orange-500 transition-colors font-medium flex items-center gap-1">
+                      {item.name}
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                      {item.submenu.map((subItem) => (
+                        <Link
+                          key={subItem.name}
+                          href={subItem.href}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 first:rounded-t-lg last:rounded-b-lg transition-colors"
+                        >
+                          {subItem.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="text-gray-700 hover:text-orange-500 transition-colors font-medium relative group"
+                  >
+                    {item.name}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-red-500 group-hover:w-full transition-all duration-300" />
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>
@@ -142,14 +175,33 @@ export default function Navigation() {
           >
             <div className="px-4 py-4 space-y-3">
               {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="block py-2 text-gray-700 hover:text-orange-500 transition-colors font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
+                <div key={item.name}>
+                  {item.submenu ? (
+                    <>
+                      <p className="py-2 text-gray-900 font-semibold">{item.name}</p>
+                      <div className="pl-4 space-y-2">
+                        {item.submenu.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            className="block py-2 text-gray-600 hover:text-orange-500 transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {subItem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className="block py-2 text-gray-700 hover:text-orange-500 transition-colors font-medium"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  )}
+                </div>
               ))}
             </div>
             <div className="border-t px-4 py-4">

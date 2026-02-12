@@ -5,6 +5,7 @@ import ValuesSection from '@/components/sections/ValuesSection';
 import ActivitiesSection from '@/components/sections/ActivitiesSection';
 import BlogSection from '@/components/sections/BlogSection';
 import NewsSection from '@/components/sections/NewsSection';
+import GallerySection from '@/components/sections/GallerySection';
 import HistorySection from '@/components/sections/HistorySection';
 import AwardsSection from '@/components/sections/AwardsSection';
 import ContactSection from '@/components/sections/ContactSection';
@@ -33,6 +34,7 @@ export default async function Home() {
       <ActivitiesSection items={sortedActivities} />
       <BlogSection posts={sortedBlogPosts} />
       <NewsSection items={sortedNews} />
+      <GallerySection />
       <HistorySection />
       <AwardsSection />
       <ContactSection />

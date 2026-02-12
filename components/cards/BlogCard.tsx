@@ -160,7 +160,7 @@ export default function BlogCard({ post, variant = 'full', showActions = false }
             <h3 className={cn('font-bold text-gray-900', isCompact ? 'text-md' : 'text-xl')}>
               {post.title}
             </h3>
-            <div className="text-gray-600 prose prose-sm max-w-none line-clamp-6 overflow-hidden">
+            <div className="text-gray-600 prose prose-sm max-w-none line-clamp-6 overflow-hidden " data-color-mode="light">
               <MDEditor.Markdown source={post.content} />
             </div>
           </div>

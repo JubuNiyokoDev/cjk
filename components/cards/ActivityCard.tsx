@@ -159,7 +159,7 @@ export default function ActivityCard({ activity, variant = 'full', showActions =
             <h3 className={cn('font-bold text-gray-900', isCompact ? 'text-xl' : 'text-2xl')}>
               {activity.title}
             </h3>
-            <div className="text-gray-600 prose prose-sm max-w-none line-clamp-6 overflow-hidden">
+            <div className="text-gray-600 prose prose-sm max-w-none line-clamp-6 overflow-hidden " data-color-mode="light">
               <MDEditor.Markdown source={activity.description} />
             </div>
           </div>

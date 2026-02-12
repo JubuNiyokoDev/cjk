@@ -41,12 +41,13 @@ type NextFetchOptions = RequestInit & {
 
 async function safeFetch<T>(
   path: string,
-  params?: Record<string, string | number | boolean | undefined>,
+  params?: Record<string, string | number | boolean | undefined> | FormData,
   init?: NextFetchOptions,
   fallback?: T
 ): Promise<T> {
   try {
-    const url = buildUrl(path, params);
+    const isFormData = params instanceof FormData;
+    const url = isFormData ? buildUrl(path) : buildUrl(path, params as Record<string, string | number | boolean | undefined>);
     const shouldSkipCache = init?.cache === 'no-store';
     const nextOption = shouldSkipCache ? undefined : init?.next ?? { revalidate: 60 };
     
@@ -54,7 +55,7 @@ async function safeFetch<T>(
     const { getTokens } = await import('./auth');
     const tokens = getTokens();
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(typeof init?.headers === 'object' && init?.headers !== null && !Array.isArray(init.headers)
         ? Object.fromEntries(
             Object.entries(init.headers).map(([key, value]) => [key, String(value)])
@@ -68,6 +69,7 @@ async function safeFetch<T>(
     const response = await fetch(url, {
       ...init,
       headers,
+      body: isFormData ? params : init?.body,
       ...(nextOption ? { next: nextOption } : {}),
     });
 
@@ -75,7 +77,21 @@ async function safeFetch<T>(
       throw new Error(`API error ${response.status} for ${url}`);
     }
 
-    return (await response.json()) as T;
+    if (response.status === 204) {
+      return fallback as T;
+    }
+
+    const text = await response.text();
+    if (!text) {
+      return fallback as T;
+    }
+
+    try {
+      return JSON.parse(text) as T;
+    } catch (parseError) {
+      console.error('API JSON parse failed:', parseError);
+      return fallback as T;
+    }
   } catch (error) {
     console.error('API fetch failed:', error);
     if (fallback !== undefined) return fallback;
@@ -133,4 +149,4 @@ export async function getActivities(params?: {
   return unwrapList(data);
 }
 
-export { API_BASE_URL };
+export { API_BASE_URL, safeFetch };
