@@ -27,12 +27,19 @@ export default function ProfilePage() {
   const [activitiesLoading, setActivitiesLoading] = useState(true);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && isOfficialMember) {
       getBlogPosts().then(setPosts).finally(() => setPostsLoading(false));
       getNews().then(setNews).finally(() => setNewsLoading(false));
       getActivities().then(setActivities).finally(() => setActivitiesLoading(false));
+      return;
     }
-  }, [isAuthenticated]);
+
+    if (isAuthenticated && !isOfficialMember) {
+      setPostsLoading(false);
+      setNewsLoading(false);
+      setActivitiesLoading(false);
+    }
+  }, [isAuthenticated, isOfficialMember]);
 
   const sortedPosts = sortByDateDesc(posts);
   const sortedNews = sortByDateDesc(news);
@@ -177,119 +184,122 @@ export default function ProfilePage() {
         </div>
       </section>
       {        /* Section des contenus personnels (Blogs, Actualités, Activités) */}
-      {!isOfficialMember && <div className="max-w-5xl mx-auto px-6 mb-10">
-        <div className="bg-orange-50 rounded-[12px] p-8 border border-orange-100">
-          <p className="text-orange-800 font-semibold mb-2">Contenus personnels</p>
+      {!isOfficialMember ? (
+        <div className="max-w-5xl mx-auto px-6 mb-10">
+          <div className="bg-orange-50 rounded-[12px] p-8 border border-orange-100">
+            <p className="text-orange-800 font-semibold mb-2">Section reservee</p>
+            <p className="text-orange-600/80 text-sm leading-relaxed">
+              Cette section est disponible uniquement pour les membres officiels.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <section className="max-w-7xl mx-auto px-6 py-12">
+          <Tabs defaultValue="blog" className="w-full">
+            <TabsList className="w-full justify-start bg-white border border-slate-200 p-1.5 rounded-md shadow-sm">
+              <TabsTrigger
+                value="blog"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
+              >
+                Blogs {sortedPosts.length}
+              </TabsTrigger>
+              <TabsTrigger
+                value="news"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
+              >
+                Actualités {sortedNews.length}
+              </TabsTrigger>
+              <TabsTrigger
+                value="activity"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
+              >
+                Activités {sortedActivities.length}
+              </TabsTrigger>
+            </TabsList>
 
-
-      }
-      <section className="max-w-7xl mx-auto px-6 py-12">
-        <Tabs defaultValue="blog" className="w-full">
-          <TabsList className="w-full justify-start bg-white border border-slate-200 p-1.5 rounded-md shadow-sm">
-            <TabsTrigger
-              value="blog"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
-            >
-              Blogs {sortedPosts.length}
-            </TabsTrigger>
-            <TabsTrigger
-              value="news"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
-            >
-              Actualités {sortedNews.length}
-            </TabsTrigger>
-            <TabsTrigger
-              value="activity"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-md px-6 py-2.5 font-semibold transition-all"
-            >
-              Activités {sortedActivities.length}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="blog" className="mt-8">
-            {postsLoading ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
-                    <div className="h-48 bg-slate-200" />
-                    <div className="p-6 space-y-3">
-                      <div className="h-4 bg-slate-200 rounded w-3/4" />
-                      <div className="h-4 bg-slate-200 rounded w-1/2" />
-                      <div className="h-20 bg-slate-200 rounded" />
+            <TabsContent value="blog" className="mt-8">
+              {postsLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
+                      <div className="h-48 bg-slate-200" />
+                      <div className="p-6 space-y-3">
+                        <div className="h-4 bg-slate-200 rounded w-3/4" />
+                        <div className="h-4 bg-slate-200 rounded w-1/2" />
+                        <div className="h-20 bg-slate-200 rounded" />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : sortedPosts.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {sortedPosts.map((post) => (
-                  <BlogCard key={post.id} post={post} showActions={true}/>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <p className="text-slate-400 text-lg">Aucun blog disponible</p>
-              </div>
-            )}
-          </TabsContent>
+                  ))}
+                </div>
+              ) : sortedPosts.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {sortedPosts.map((post) => (
+                    <BlogCard key={post.id} post={post} showActions={true}/>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-slate-400 text-lg">Aucun blog disponible</p>
+                </div>
+              )}
+            </TabsContent>
 
-          <TabsContent value="news" className="mt-8">
-            {newsLoading ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
-                    <div className="h-48 bg-slate-200" />
-                    <div className="p-6 space-y-3">
-                      <div className="h-4 bg-slate-200 rounded w-3/4" />
-                      <div className="h-4 bg-slate-200 rounded w-1/2" />
-                      <div className="h-20 bg-slate-200 rounded" />
+            <TabsContent value="news" className="mt-8">
+              {newsLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
+                      <div className="h-48 bg-slate-200" />
+                      <div className="p-6 space-y-3">
+                        <div className="h-4 bg-slate-200 rounded w-3/4" />
+                        <div className="h-4 bg-slate-200 rounded w-1/2" />
+                        <div className="h-20 bg-slate-200 rounded" />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : sortedNews.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {sortedNews.map((item) => (
-                  <NewsCard key={item.id} item={item} showActions={true} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <p className="text-slate-400 text-lg">Aucune actualité disponible</p>
-              </div>
-            )}
-          </TabsContent>
+                  ))}
+                </div>
+              ) : sortedNews.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {sortedNews.map((item) => (
+                    <NewsCard key={item.id} item={item} showActions={true} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-slate-400 text-lg">Aucune actualité disponible</p>
+                </div>
+              )}
+            </TabsContent>
 
-          <TabsContent value="activity" className="mt-8">
-            {activitiesLoading ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
-                    <div className="h-48 bg-slate-200" />
-                    <div className="p-6 space-y-3">
-                      <div className="h-4 bg-slate-200 rounded w-3/4" />
-                      <div className="h-4 bg-slate-200 rounded w-1/2" />
-                      <div className="h-20 bg-slate-200 rounded" />
+            <TabsContent value="activity" className="mt-8">
+              {activitiesLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white rounded-md overflow-hidden shadow-sm border border-slate-100 animate-pulse">
+                      <div className="h-48 bg-slate-200" />
+                      <div className="p-6 space-y-3">
+                        <div className="h-4 bg-slate-200 rounded w-3/4" />
+                        <div className="h-4 bg-slate-200 rounded w-1/2" />
+                        <div className="h-20 bg-slate-200 rounded" />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : sortedActivities.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {sortedActivities.map((item) => (
-                  <ActivityCard key={item.id} activity={item} showActions={true} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <p className="text-slate-400 text-lg">Aucune activité disponible</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </section>
+                  ))}
+                </div>
+              ) : sortedActivities.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {sortedActivities.map((item) => (
+                    <ActivityCard key={item.id} activity={item} showActions={true} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-slate-400 text-lg">Aucune activité disponible</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </section>
+      )}
 
       <Footer />
     </main>

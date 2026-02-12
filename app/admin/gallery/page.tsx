@@ -106,8 +106,13 @@ export default function AdminGalleryPage() {
   const getItemId = (item: GalleryItem | null) => item?._id ?? item?.id ?? '';
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || !isOfficialMember)) {
-      router.push('/login');
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!isOfficialMember) {
+      router.push('/unauthorized');
       return;
     }
     if (isAuthenticated && isOfficialMember) {
