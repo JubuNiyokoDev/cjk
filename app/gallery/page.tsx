@@ -140,50 +140,64 @@ export default function GalleryPage() {
           </div>
 
           {/* Masonry Grid */}
-          <motion.div
-            layout
-            className="columns-1 md:columns-2 lg:columns-3 gap-2 space-y-3"
-          >
-            {filteredItems.map((item, index) => (
-              <motion.div
-                key={item._id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                whileHover={{ rotate: -2, scale: 1.02 }}
-                transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
-                onClick={() => setSelectedItem(item)}
-                className="relative group cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow break-inside-avoid mb-3"
-              >
-                <div className={`${heightClasses[item.height as keyof typeof heightClasses]} w-full relative`} style={{ aspectRatio: '4/5' }}>
-                  {item.type === 'photo' ? (
-                    <img src={item.url} alt={item.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <>
-                      <img src={item.thumbnail || item.url} alt={item.title} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 flex items-center justify-center z-10">
-                        <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xl">
-                          <Play className="w-8 h-8 text-orange-600 ml-1" />
+          {filteredItems.length === 0 ? (
+            <div className="max-w-xl mx-auto">
+              <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center shadow-sm">
+                <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center">
+                  <ImageIcon className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Galerie vide</h3>
+                <p className="text-gray-600">
+                  Aucun contenu n&apos;est disponible pour le moment. Revenez plus tard.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              layout
+              className="columns-1 md:columns-2 lg:columns-3 gap-2 space-y-3"
+            >
+              {filteredItems.map((item, index) => (
+                <motion.div
+                  key={item._id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{ rotate: -2, scale: 1.02 }}
+                  transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
+                  onClick={() => setSelectedItem(item)}
+                  className="relative group cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow break-inside-avoid mb-3"
+                >
+                  <div className={`${heightClasses[item.height as keyof typeof heightClasses]} w-full relative`} style={{ aspectRatio: '4/5' }}>
+                    {item.type === 'photo' ? (
+                      <img src={item.url} alt={item.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <img src={item.thumbnail || item.url} alt={item.title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
+                          <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xl">
+                            <Play className="w-8 h-8 text-orange-600 ml-1" />
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )}
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-                  <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-orange-600">
-                    {item.type === 'video' ? 'Vidéo' : 'Photo'}
+                      </>
+                    )}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-orange-600">
+                      {item.type === 'video' ? 'Vidéo' : 'Photo'}
+                    </div>
                   </div>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent text-white">
-                  <p className="text-xs font-semibold text-orange-300 mb-2 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                    {item.category}
-                  </p>
-                  <h3 className="font-bold text-lg">{item.title}</h3>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent text-white">
+                    <p className="text-xs font-semibold text-orange-300 mb-2 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                      {item.category}
+                    </p>
+                    <h3 className="font-bold text-lg">{item.title}</h3>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
 

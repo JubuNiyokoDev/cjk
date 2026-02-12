@@ -307,15 +307,36 @@ export default function AdminGalleryPage() {
           </div>
 
           {/* Masonry Grid */}
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={items.map((item) => getItemId(item))} strategy={rectSortingStrategy}>
-              <motion.div layout className="columns-1 md:columns-2 lg:columns-3 gap-2 space-y-3">
-                {filteredItems.map((item) => (
-                  <SortableGalleryItem key={getItemId(item)} item={item} onEdit={openEditModal} onDelete={handleDelete} />
-                ))}
-              </motion.div>
-            </SortableContext>
-          </DndContext>
+          {filteredItems.length === 0 ? (
+            <div className="max-w-xl mx-auto">
+              <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center shadow-sm">
+                <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center">
+                  <ImageIcon className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucun média</h3>
+                <p className="text-gray-600 mb-6">
+                  Votre galerie est vide pour le moment. Ajoutez une photo ou une vidéo.
+                </p>
+                <button
+                  onClick={() => { setEditItem(null); setFormData({ type: 'photo', file: null, thumbnail: null, title: '', category: '', height: 'medium', order: items.length }); setShowCreateModal(true); }}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg transition-shadow"
+                >
+                  <Plus className="w-5 h-5" />
+                  Ajouter un média
+                </button>
+              </div>
+            </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map((item) => getItemId(item))} strategy={rectSortingStrategy}>
+                <motion.div layout className="columns-1 md:columns-2 lg:columns-3 gap-2 space-y-3">
+                  {filteredItems.map((item) => (
+                    <SortableGalleryItem key={getItemId(item)} item={item} onEdit={openEditModal} onDelete={handleDelete} />
+                  ))}
+                </motion.div>
+              </SortableContext>
+            </DndContext>
+          )}
 
           {/* Dialog de confirmation de suppression */}
           <Dialog open={confirmOpen} onOpenChange={(open) => { setConfirmOpen(open); if (!open) setDeleteItem(null); }}>
