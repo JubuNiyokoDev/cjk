@@ -8,6 +8,16 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "api.cjkamenge.com",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.api.cjkamenge.com",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "https",
         hostname: "api.cjk.com",
         pathname: "/media/**",
       },
