@@ -7,6 +7,16 @@ const nextConfig = {
     unoptimized: true,
     remotePatterns: [
       {
+        protocol: "https",
+        hostname: "api.cjk.com",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.api.cjk.com",
+        pathname: "/media/**",
+      },
+      {
         protocol: "http",
         hostname: "10.34.146.127",
         port: "8000",
