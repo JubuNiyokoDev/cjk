@@ -2,6 +2,7 @@
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import BlogCard from '@/components/cards/BlogCard';
+import ContentCtaButton from '@/components/sections/ContentCtaButton';
 import { getBlogCategories, getBlogPosts } from '@/lib/api';
 import { sortByDateDesc } from '@/lib/content';
 
@@ -39,12 +40,13 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                 Pour publier, aimer ou commenter un article, un compte est nécessaire.
               </p>
             </div>
-            <Link
-              href="/auth"
+            <ContentCtaButton
+              loginLabel="Se connecter ou créer un compte"
+              createLabel="Créer un article"
+              createHref="/admin/create?type=blog"
+              unauthorizedLabel="Accès réservé"
               className="px-6 py-3 rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              Se connecter ou créer un compte
-            </Link>
+            />
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 mb-12">

@@ -2,6 +2,7 @@
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import NewsCard from '@/components/cards/NewsCard';
+import ContentCtaButton from '@/components/sections/ContentCtaButton';
 import { getNews } from '@/lib/api';
 import { sortByDateDesc } from '@/lib/content';
 
@@ -30,12 +31,13 @@ export default async function NewsPage() {
                 La création et la modification des actualités sont réservées aux agents CJK.
               </p>
             </div>
-            <Link
-              href="/auth"
+            <ContentCtaButton
+              loginLabel="Connexion staff"
+              createLabel="Créer une actualité"
+              createHref="/admin/create?type=news"
+              unauthorizedLabel="Accès réservé"
               className="px-6 py-3 rounded-md bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              Connexion staff
-            </Link>
+            />
           </div>
 
           {sortedNews.length === 0 ? (

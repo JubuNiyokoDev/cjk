@@ -2,6 +2,7 @@
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import ActivityCard from '@/components/cards/ActivityCard';
+import ContentCtaButton from '@/components/sections/ContentCtaButton';
 import { getActivities } from '@/lib/api';
 import { getActivityLabel, sortByDateDesc } from '@/lib/content';
 
@@ -37,18 +38,19 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
                 Les activités sont créées par des membres autorisés. Connectez-vous pour soumettre une proposition.
               </p>
             </div>
-            <Link
-              href="/auth"
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              Se connecter
-            </Link>
+            <ContentCtaButton
+              loginLabel="Se connecter"
+              createLabel="Créer une activité"
+              createHref="/admin/create?type=activity"
+              unauthorizedLabel="Accès réservé"
+              className="px-6 py-3 rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+            />
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
             <Link
               href="/activities"
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 !activityType
                   ? 'bg-orange-500 text-white shadow'
                   : 'bg-white text-gray-700 shadow hover:bg-orange-50'
@@ -60,7 +62,7 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
               <Link
                 key={type}
                 href={`/activities?activity_type=${type}`}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                   activityType === type
                     ? 'bg-orange-500 text-white shadow'
                     : 'bg-white text-gray-700 shadow hover:bg-orange-50'
