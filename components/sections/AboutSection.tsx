@@ -7,6 +7,13 @@ import { useRef } from 'react';
 import { Users, Heart, Globe, Award } from 'lucide-react';
 import ReadButton from '@/lib/speak';
 
+const STORY_PARAGRAPHS = [
+  "Le Centre Jeunes Kamenge est l'une des Œuvres sociales  de l'Archidiocèse  de Bujumbura. C'est une structure éducative, formative, récréative, sportive et de rencontres, ouvertes aux jeunes sans distinction d'origine ethnique, de sexe ou de religion.",
+  "Créé en 1992, le Centre est né dans un contexte marqué par des tensions sociales et politiques. Il avait pour objectif principal d'offrir aux jeunes un cadre de rencontre, de dialogue, de formation et de promotion de la paix.",
+  "De 1992 à 2015, la gestion du Centre était assurée par les Missionnaires Xavériens. Pendant plus de 20 ans, ils lui ont progressivement donné, sa structure actuelle en mettant en place des structures et des infrastructures nécessaires pour remplir sa mission. Depuis juin 2015,la gestion est assurée par une équipe de Prêtres diocésains nommés par l’archevêque de BUJUMBURA.",
+  "Le groupe cible actuel est constitué de tous les jeunes âgés de 16 ans a 30 ans, sans discrimination ethnique, sociales ou religieuse, en provenance de 6 zones de la commune NTAHANGWA (Buterere, Cibitoke, Gihosha, Kamenge, Kinama et Ngagara) et d'autres communes de la mairie de Bujumbura. Au 30 Juillet 2026, Le Centre jeunes Kamenge avait déjà inscrit dans ses registres d'adhésion 54950 membres (filles et garçons).",
+];
+
 const stats = [
   { icon: Users, value: '50,788', label: 'Jeunes membres' },
   { icon: Heart, value: '16-30', label: 'Âge des membres' },
@@ -44,25 +51,7 @@ export default function AboutSection() {
             <h3 className="text-3xl font-bold mb-6 text-gray-900">
               Notre Histoire
             </h3>
-            <ReadButton />
-            <div className="space-y-4 text-gray-700 leading-relaxed">
-              <p>
-                Le Centre Jeunes Kamenge est l'un des grands centres sociaux de la commune de
-                Ntahangwa, en mairie de Bujumbura, au Burundi. C'est une structure éducative,
-                formative, récréative et culturelle, ouverte aux jeunes sans distinction d'origine
-                ethnique, de sexe ou de religion.
-              </p>
-              <p>
-                Créé en 1992, le Centre est né dans un contexte marqué par des tensions sociales
-                et politiques. Il avait pour objectif principal d'offrir aux jeunes un cadre de
-                rencontre, de dialogue, de formation et de promotion de la paix.
-              </p>
-              <p>
-                Depuis juin 2015, la gestion est assurée par une équipe de laïcs burundais,
-                nommés par l'Archevêque de Bujumbura, pour poursuivre et renforcer la mission
-                du Centre.
-              </p>
-            </div>
+            <ReadButton paragraphs={STORY_PARAGRAPHS} />
           </motion.div>
 
           <motion.div
