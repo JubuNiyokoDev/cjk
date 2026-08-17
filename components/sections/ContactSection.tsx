@@ -9,15 +9,15 @@ const contactInfo = [
   {
     icon: MapPin,
     title: 'Adresse',
-    info: 'Kamenge, Commune Ntahangwa',
-    details: 'Bujumbura, Burundi',
+    info: 'Cibitoke, 15ème Avenue, no.2',
+    details: 'BP 783 Bujumbura',
     color: 'from-red-500 to-pink-500',
   },
   {
     icon: Phone,
     title: 'Téléphone',
     info: '+257 79 921 760',
-    details: 'BP 788 - Bujumbura',
+    details: 'Bujumbura, Burundi',
     color: 'from-green-500 to-emerald-500',
   },
   {

@@ -38,14 +38,14 @@ const timeline = [
     year: '2015',
     icon: Users,
     title: 'Nouvelle Direction',
-    description: 'Une équipe de laïcs burundais prend la relève pour poursuivre et renforcer la mission du Centre.',
+    description: 'Une équipe de Prêtres diocésains prend la relève pour poursuivre et renforcer la mission du Centre.',
     color: 'from-yellow-500 to-orange-500',
   },
   {
-    year: '2019',
+    year: '2026',
     icon: Calendar,
-    title: '50,788 membres',
-    description: 'Le Centre atteint un nombre record de jeunes inscrits, confirmant son rôle majeur dans la communauté.',
+    title: '54,950 membres',
+    description: 'Au 30 juillet 2026, le Centre atteint un nombre record de jeunes inscrits, confirmant son rôle majeur dans la communauté.',
     color: 'from-red-500 to-pink-500',
   },
 ];

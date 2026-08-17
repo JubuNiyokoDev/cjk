@@ -73,7 +73,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-gray-400 text-sm">
                 <MapPin className="w-4 h-4 flex-shrink-0 mt-1" />
-                <span>Kamenge, Bujumbura, Burundi</span>
+                <span>Cibitoke, 15ème Avenue, no.2 — BP 783 Bujumbura</span>
               </li>
               <li className="flex items-center gap-2 text-gray-400 text-sm">
                 <Phone className="w-4 h-4 flex-shrink-0" />
