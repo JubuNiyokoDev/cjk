@@ -3,10 +3,8 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import ActivityCard from '@/components/cards/ActivityCard';
 import ContentCtaButton from '@/components/sections/ContentCtaButton';
-import { getActivities } from '@/lib/api';
-import { getActivityLabel, sortByDateDesc } from '@/lib/content';
-
-const activityTypes = ['sport', 'culture', 'formation', 'paix', 'autre'];
+import { getActivities, getActivityCategories } from '@/lib/api';
+import { sortByDateDesc, withFallbackCategories } from '@/lib/content';
 
 type ActivitiesPageProps = {
   searchParams?: { activity_type?: string; hashtag?: string };
@@ -15,11 +13,11 @@ type ActivitiesPageProps = {
 export default async function ActivitiesPage({ searchParams }: ActivitiesPageProps) {
   const activityType = searchParams?.activity_type;
   const hashtag = searchParams?.hashtag?.trim() || undefined;
-  const activities = await getActivities({
-    activity_type: activityType,
-    is_published: true,
-    hashtag,
-  });
+  const [activities, rawCategories] = await Promise.all([
+    getActivities({ activity_type: activityType, is_published: true, hashtag }),
+    getActivityCategories(),
+  ]);
+  const categories = withFallbackCategories(rawCategories);
   const sortedActivities = sortByDateDesc(activities);
 
   return (
@@ -63,17 +61,17 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
             >
               Toutes
             </Link>
-            {activityTypes.map((type) => (
+            {categories.map((category) => (
               <Link
-                key={type}
-                href={`/activities?activity_type=${type}`}
+                key={category.slug}
+                href={`/activities?activity_type=${encodeURIComponent(category.slug)}`}
                 className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-                  activityType === type
+                  activityType === category.slug
                     ? 'bg-orange-500 text-white shadow'
                     : 'bg-white text-gray-700 shadow hover:bg-orange-50'
                 }`}
               >
-                {getActivityLabel(type)}
+                {category.name}
               </Link>
             ))}
           </div>
@@ -106,7 +104,7 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {sortedActivities.map((activity) => (
-                <ActivityCard key={activity.id} activity={activity} />
+                <ActivityCard key={activity.id} activity={activity} categories={categories} />
               ))}
             </div>
           )}

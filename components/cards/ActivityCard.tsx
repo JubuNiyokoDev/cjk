@@ -2,12 +2,18 @@
 
 import { CalendarDays, Compass, Edit, Trash2, Eye, EyeOff, Images } from 'lucide-react';
 import Link from 'next/link';
-import type { Activity } from '@/lib/types';
+import type { Activity, ActivityCategory } from '@/lib/types';
 import { API_BASE_URL } from '@/lib/api';
-import { formatDate, getActivityGradient, getActivityLabel, resolveImageUrl } from '@/lib/content';
+import {
+  formatDate,
+  getActivityGradient,
+  getActivityLabel,
+  indexCategories,
+  resolveImageUrl,
+} from '@/lib/content';
 import { cn } from '@/lib/utils';
 import MDEditor from '@uiw/react-md-editor';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,13 +21,21 @@ type ActivityCardProps = {
   activity: Activity;
   variant?: 'compact' | 'full';
   showActions?: boolean;
+  /** Catégories gérées par le staff : donnent le libellé et la couleur du badge. */
+  categories?: ActivityCategory[];
 };
 
-export default function ActivityCard({ activity, variant = 'full', showActions = false }: ActivityCardProps) {
+export default function ActivityCard({
+  activity,
+  variant = 'full',
+  showActions = false,
+  categories,
+}: ActivityCardProps) {
   const imageUrl = resolveImageUrl(API_BASE_URL, activity.image);
   const isCompact = variant === 'compact';
-  const label = getActivityLabel(activity.activity_type);
-  const gradient = getActivityGradient(activity.activity_type);
+  const categoryIndex = useMemo(() => indexCategories(categories), [categories]);
+  const label = getActivityLabel(activity.activity_type, categoryIndex);
+  const gradient = getActivityGradient(activity.activity_type, categoryIndex);
   const router = useRouter();
   const { toast } = useToast();
   const [isPublished, setIsPublished] = useState(activity.is_published);

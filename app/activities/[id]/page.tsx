@@ -6,16 +6,19 @@ import Footer from '@/components/Footer';
 import PostGallery from '@/components/content/PostGallery';
 import HashtagList from '@/components/content/HashtagList';
 import ExternalLinkButton from '@/components/content/ExternalLinkButton';
-import { getActivity, API_BASE_URL } from '@/lib/api';
-import { buildGallerySlides, formatDate, getActivityLabel } from '@/lib/content';
+import { getActivity, getActivityCategories, API_BASE_URL } from '@/lib/api';
+import { buildGallerySlides, formatDate, getActivityLabel, indexCategories } from '@/lib/content';
 import { Compass, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import MDEditor from '@uiw/react-md-editor';
 
 async function ActivityDetailContent({ activityId }: { activityId: number }) {
-  const activity = await getActivity(activityId);
+  const [activity, categories] = await Promise.all([
+    getActivity(activityId),
+    getActivityCategories(),
+  ]);
   const slides = buildGallerySlides(API_BASE_URL, activity.image, activity.images);
-  const label = getActivityLabel(activity.activity_type);
+  const label = getActivityLabel(activity.activity_type, indexCategories(categories));
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

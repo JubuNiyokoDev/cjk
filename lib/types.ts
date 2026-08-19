@@ -20,6 +20,28 @@ export type BlogCategory = {
   slug: string;
 };
 
+/** Couleurs de badge proposées au staff pour une catégorie d'activité. */
+export type ActivityCategoryColor =
+  | 'emerald'
+  | 'orange'
+  | 'blue'
+  | 'red'
+  | 'purple'
+  | 'yellow'
+  | 'cyan'
+  | 'pink'
+  | 'slate';
+
+/** Catégorie d'activité gérée par le staff (le slug est stocké dans activity_type). */
+export type ActivityCategory = {
+  id: number;
+  name: string;
+  slug: string;
+  color: ActivityCategoryColor;
+  order: number;
+  is_active: boolean;
+};
+
 /** Image de galerie attachée à un contenu (activité, actualité, article). */
 export type ContentImage = {
   id: number;
@@ -161,7 +183,8 @@ export type Activity = {
   id: number;
   title: string;
   description: string;
-  activity_type: 'sport' | 'culture' | 'formation' | 'paix' | 'autre' | string;
+  /** Slug d'une ActivityCategory (les catégories sont gérées en base). */
+  activity_type: string;
   author: number;
   author_name: string;
   image: string | null;

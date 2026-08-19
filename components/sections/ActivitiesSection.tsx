@@ -13,9 +13,9 @@ import {
   Heart,
   Users,
 } from 'lucide-react';
-import type { Activity } from '@/lib/types';
+import type { Activity, ActivityCategory } from '@/lib/types';
 import ActivityCard from '@/components/cards/ActivityCard';
-import { getActivityLabel } from '@/lib/content';
+import { withFallbackCategories } from '@/lib/content';
 
 const activityHighlights = [
   {
@@ -56,16 +56,16 @@ const activityHighlights = [
   },
 ];
 
-const activityTypes = ['sport', 'culture', 'formation', 'paix', 'autre'];
-
 type ActivitiesSectionProps = {
   items: Activity[];
+  categories?: ActivityCategory[];
 };
 
-export default function ActivitiesSection({ items }: ActivitiesSectionProps) {
+export default function ActivitiesSection({ items, categories }: ActivitiesSectionProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
   const featuredActivities = items.slice(0, 6);
+  const activityCategories = withFallbackCategories(categories);
 
   return (
     <section id="activities" className="py-20 bg-gradient-to-b from-gray-50 to-white" ref={ref}>
@@ -94,7 +94,11 @@ export default function ActivitiesSection({ items }: ActivitiesSectionProps) {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 whileHover={{ y: -10, scale: 1.02 }}
               >
-                <ActivityCard activity={activity} variant="compact" />
+                <ActivityCard
+                  activity={activity}
+                  variant="compact"
+                  categories={activityCategories}
+                />
               </motion.div>
             ))}
           </div>
@@ -132,13 +136,14 @@ export default function ActivitiesSection({ items }: ActivitiesSectionProps) {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-12 flex flex-wrap items-center justify-center gap-3"
         >
-          {activityTypes.map((type) => (
-            <span
-              key={type}
-              className="px-4 py-2 rounded-md bg-white shadow text-sm font-semibold text-gray-700"
+          {activityCategories.map((category) => (
+            <Link
+              key={category.slug}
+              href={`/activities?activity_type=${encodeURIComponent(category.slug)}`}
+              className="px-4 py-2 rounded-md bg-white shadow text-sm font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
-              {getActivityLabel(type)}
-            </span>
+              {category.name}
+            </Link>
           ))}
         </motion.div>
 

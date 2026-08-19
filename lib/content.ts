@@ -1,4 +1,4 @@
-﻿import type { Activity, ContentImage } from './types';
+﻿import type { Activity, ActivityCategory, ActivityCategoryColor, ContentImage } from './types';
 
 export type GallerySlide = {
   url: string;
@@ -31,21 +31,48 @@ export function buildGallerySlides(
   return slides;
 }
 
-const activityLabels: Record<string, string> = {
-  sport: 'Sport',
-  culture: 'Culture',
-  formation: 'Formation',
-  paix: 'Paix & Réconciliation',
-  autre: 'Autre',
+/** Dégradé Tailwind du badge, par couleur choisie par le staff. */
+export const ACTIVITY_COLOR_GRADIENTS: Record<ActivityCategoryColor, string> = {
+  emerald: 'from-emerald-500 to-green-500',
+  orange: 'from-orange-500 to-yellow-500',
+  blue: 'from-blue-500 to-cyan-500',
+  red: 'from-red-500 to-pink-500',
+  purple: 'from-purple-500 to-fuchsia-500',
+  yellow: 'from-yellow-500 to-amber-500',
+  cyan: 'from-cyan-500 to-sky-500',
+  pink: 'from-pink-500 to-rose-500',
+  slate: 'from-slate-500 to-gray-500',
 };
 
-const activityGradients: Record<string, string> = {
-  sport: 'from-emerald-500 to-green-500',
-  culture: 'from-orange-500 to-yellow-500',
-  formation: 'from-blue-500 to-cyan-500',
-  paix: 'from-red-500 to-pink-500',
-  autre: 'from-slate-500 to-gray-500',
-};
+export const DEFAULT_ACTIVITY_GRADIENT = 'from-orange-500 to-red-500';
+
+/**
+ * Catégories de secours utilisées quand l'API est injoignable : le site public
+ * continue d'afficher des libellés lisibles au lieu de slugs bruts.
+ */
+const FALLBACK_CATEGORIES: ActivityCategory[] = [
+  { id: -1, name: 'Sport', slug: 'sport', color: 'emerald', order: 1, is_active: true },
+  { id: -2, name: 'Culture', slug: 'culture', color: 'orange', order: 2, is_active: true },
+  { id: -3, name: 'Formation', slug: 'formation', color: 'blue', order: 3, is_active: true },
+  { id: -4, name: 'Paix & Réconciliation', slug: 'paix', color: 'red', order: 4, is_active: true },
+  { id: -5, name: 'Autre', slug: 'autre', color: 'slate', order: 5, is_active: true },
+];
+
+export function withFallbackCategories(categories: ActivityCategory[] | null | undefined) {
+  return categories && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
+}
+
+/** Index slug → catégorie, pour retrouver libellé et couleur en O(1). */
+export function indexCategories(categories: ActivityCategory[] | null | undefined) {
+  return new Map(withFallbackCategories(categories).map((item) => [item.slug, item]));
+}
+
+/** Transforme un slug inconnu en libellé lisible (catégorie supprimée). */
+function humanizeSlug(type: string) {
+  if (!type) return 'Activité';
+  const words = type.replace(/[-_]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
 
 export function formatDate(dateString: string | null | undefined) {
   if (!dateString) return 'Date à confirmer';
@@ -72,12 +99,18 @@ export function resolveImageUrl(baseUrl: string, image?: string | null) {
   return `${normalizedBase}${normalizedImage}`;
 }
 
-export function getActivityLabel(type: string) {
-  return activityLabels[type] ?? 'Activité';
+export type ActivityCategoryIndex = Map<string, ActivityCategory>;
+
+export function getActivityLabel(type: string, categories?: ActivityCategoryIndex) {
+  const match = categories?.get(type);
+  if (match) return match.name;
+  return humanizeSlug(type);
 }
 
-export function getActivityGradient(type: string) {
-  return activityGradients[type] ?? 'from-orange-500 to-red-500';
+export function getActivityGradient(type: string, categories?: ActivityCategoryIndex) {
+  const match = categories?.get(type);
+  if (match) return ACTIVITY_COLOR_GRADIENTS[match.color] ?? DEFAULT_ACTIVITY_GRADIENT;
+  return DEFAULT_ACTIVITY_GRADIENT;
 }
 
 export function sortByDateDesc<T extends { created_at?: string }>(items: T[] | null | undefined) {

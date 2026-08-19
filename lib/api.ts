@@ -6,6 +6,7 @@ export async function getActivity(id: number) {
 }
 import type {
   Activity,
+  ActivityCategory,
   Award,
   BlogCategory,
   BlogPost,
@@ -141,6 +142,17 @@ export async function getNews(params?: { is_published?: boolean; hashtag?: strin
     '/api/news/',
     params,
     { next: { revalidate: 60 } },
+    []
+  );
+  return unwrapList(data);
+}
+
+/** Catégories d'activités actives, gérées par le staff depuis /admin/activities. */
+export async function getActivityCategories() {
+  const data = await safeFetch<ActivityCategory[] | Paginated<ActivityCategory>>(
+    '/api/activities/categories/',
+    undefined,
+    { next: { revalidate: 300 } },
     []
   );
   return unwrapList(data);

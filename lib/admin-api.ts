@@ -2,7 +2,14 @@
 
 import { API_BASE_URL } from '@/lib/api';
 import { ensureValidAccessToken } from '@/lib/auth';
-import type { Activity, BlogCategory, BlogPost, NewsItem } from '@/lib/types';
+import type {
+  Activity,
+  ActivityCategory,
+  ActivityCategoryColor,
+  BlogCategory,
+  BlogPost,
+  NewsItem,
+} from '@/lib/types';
 
 /**
  * Couche CRUD réservée au back-office.
@@ -270,13 +277,45 @@ export async function deleteNews(id: number): Promise<void> {
 /* Activités, événements et formations                                 */
 /* ------------------------------------------------------------------ */
 
-export const ACTIVITY_TYPES = [
-  { value: 'sport', label: 'Sport' },
-  { value: 'culture', label: 'Culture' },
-  { value: 'formation', label: 'Formation' },
-  { value: 'paix', label: 'Paix & Réconciliation' },
-  { value: 'autre', label: 'Autre' },
-] as const;
+export type ActivityCategoryInput = {
+  name: string;
+  color?: ActivityCategoryColor;
+  order?: number;
+  is_active?: boolean;
+};
+
+/** Liste des catégories. Le staff voit aussi les catégories masquées. */
+export async function listActivityCategories(): Promise<ActivityCategory[]> {
+  const data = await adminRequest<ActivityCategory[] | Paginated<ActivityCategory>>(
+    '/api/activities/categories/',
+  );
+  return unwrapList(data);
+}
+
+export async function createActivityCategory(
+  input: ActivityCategoryInput,
+): Promise<ActivityCategory> {
+  // Le slug est dérivé du nom côté serveur, puis figé : le renommer
+  // orphelinerait les activités qui l'utilisent déjà.
+  return adminRequest<ActivityCategory>('/api/activities/categories/', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateActivityCategory(
+  id: number,
+  input: Partial<ActivityCategoryInput>,
+): Promise<ActivityCategory> {
+  return adminRequest<ActivityCategory>(`/api/activities/categories/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteActivityCategory(id: number): Promise<void> {
+  await adminRequest<void>(`/api/activities/categories/${id}/`, { method: 'DELETE' });
+}
 
 export type ActivityInput = {
   title: string;

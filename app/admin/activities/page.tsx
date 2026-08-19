@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Plus } from 'lucide-react';
 import AdminShell from '@/components/admin/AdminShell';
+import ActivityCategoryManager from '@/components/admin/ActivityCategoryManager';
 import AdminContentTable, { type AdminContentRow } from '@/components/admin/AdminContentTable';
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import { FormField, ImageField } from '@/components/admin/form-fields';
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -32,16 +34,17 @@ import {
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { useToast } from '@/hooks/use-toast';
 import {
-  ACTIVITY_TYPES,
   AdminApiError,
   createActivity,
   deleteActivity,
+  listActivityCategories,
   listAdminActivities,
   togglePublish,
   updateActivity,
 } from '@/lib/admin-api';
+import { indexCategories } from '@/lib/content';
 import { uploadImages, type UploadProgress } from '@/lib/upload';
-import type { Activity, ContentImage } from '@/lib/types';
+import type { Activity, ActivityCategory, ContentImage } from '@/lib/types';
 
 const ALL_TYPES = 'all';
 
@@ -59,7 +62,7 @@ type ActivityFormState = {
 const emptyForm: ActivityFormState = {
   title: '',
   description: '',
-  activity_type: 'formation',
+  activity_type: '',
   date_activite: '',
   is_published: false,
   image: undefined,
@@ -67,15 +70,12 @@ const emptyForm: ActivityFormState = {
   external_link: '',
 };
 
-function activityTypeLabel(value: string): string {
-  return ACTIVITY_TYPES.find((type) => type.value === value)?.label ?? value;
-}
-
 export default function AdminActivitiesPage() {
   const { isAuthenticated, isOfficialMember } = useAuthSession();
   const { toast } = useToast();
 
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [categories, setCategories] = useState<ActivityCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
@@ -104,13 +104,25 @@ export default function AdminActivitiesPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      setActivities(await listAdminActivities());
+      const [activityList, categoryList] = await Promise.all([
+        listAdminActivities(),
+        listActivityCategories(),
+      ]);
+      setActivities(activityList);
+      setCategories(categoryList);
     } catch (error) {
       showError(error, 'Impossible de charger les activités.');
     } finally {
       setIsLoading(false);
     }
   }, [showError]);
+
+  /** Libellé lisible d'un slug, même si la catégorie a depuis été supprimée. */
+  const categoryIndex = useMemo(() => indexCategories(categories), [categories]);
+  const typeLabel = useCallback(
+    (slug: string) => categoryIndex.get(slug)?.name ?? slug,
+    [categoryIndex]
+  );
 
   useEffect(() => {
     if (!isAuthenticated || !isOfficialMember) return;
@@ -128,7 +140,9 @@ export default function AdminActivitiesPage() {
 
   const openCreateForm = () => {
     setEditingItem(null);
-    setForm(emptyForm);
+    // Présélectionne la première catégorie active pour éviter un select vide.
+    const firstActive = categories.find((category) => category.is_active) ?? categories[0];
+    setForm({ ...emptyForm, activity_type: firstActive?.slug ?? '' });
     setFieldErrors({});
     resetGallery();
     setIsFormOpen(true);
@@ -177,10 +191,15 @@ export default function AdminActivitiesPage() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.description.trim() || !form.date_activite) {
+    if (
+      !form.title.trim() ||
+      !form.description.trim() ||
+      !form.date_activite ||
+      !form.activity_type
+    ) {
       toast({
         title: 'Champs requis',
-        description: 'Le titre, la description et la date sont obligatoires.',
+        description: 'Le titre, la catégorie, la description et la date sont obligatoires.',
         variant: 'destructive',
       });
       return;
@@ -281,7 +300,7 @@ export default function AdminActivitiesPage() {
     meta: (
       <span className="flex items-center gap-2 flex-wrap">
         <Badge variant="outline" className="font-normal">
-          {activityTypeLabel(item.activity_type)}
+          {typeLabel(item.activity_type)}
         </Badge>
         {item.date_activite && (
           <span>{new Date(item.date_activite).toLocaleDateString('fr-FR')}</span>
@@ -309,46 +328,59 @@ export default function AdminActivitiesPage() {
         </Button>
       }
     >
-      <div className="mb-6 max-w-xs">
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger aria-label="Filtrer par type">
-            <SelectValue placeholder="Filtrer par type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_TYPES}>Tous les types</SelectItem>
-            {ACTIVITY_TYPES.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Tabs defaultValue="activities">
+        <TabsList className="mb-6">
+          <TabsTrigger value="activities">Activités ({activities.length})</TabsTrigger>
+          <TabsTrigger value="categories">Catégories ({categories.length})</TabsTrigger>
+        </TabsList>
 
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-        </div>
-      ) : (
-        <AdminContentTable
-          rows={rows}
-          emptyMessage={
-            typeFilter === ALL_TYPES
-              ? 'Aucune activité pour le moment. Créez la première !'
-              : `Aucune activité de type « ${activityTypeLabel(typeFilter)} ».`
-          }
-          togglingId={togglingId}
-          onTogglePublish={handleTogglePublish}
-          onEdit={(row) => {
-            const item = activities.find((entry) => entry.id === row.id);
-            if (item) openEditForm(item);
-          }}
-          onDelete={(row) => {
-            const item = activities.find((entry) => entry.id === row.id);
-            if (item) setDeletingItem(item);
-          }}
-        />
-      )}
+        <TabsContent value="activities">
+          <div className="mb-6 max-w-xs">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger aria-label="Filtrer par catégorie">
+                <SelectValue placeholder="Filtrer par catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_TYPES}>Toutes les catégories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.slug}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isLoading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            </div>
+          ) : (
+            <AdminContentTable
+              rows={rows}
+              emptyMessage={
+                typeFilter === ALL_TYPES
+                  ? 'Aucune activité pour le moment. Créez la première !'
+                  : `Aucune activité dans « ${typeLabel(typeFilter)} ».`
+              }
+              togglingId={togglingId}
+              onTogglePublish={handleTogglePublish}
+              onEdit={(row) => {
+                const item = activities.find((entry) => entry.id === row.id);
+                if (item) openEditForm(item);
+              }}
+              onDelete={(row) => {
+                const item = activities.find((entry) => entry.id === row.id);
+                if (item) setDeletingItem(item);
+              }}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="categories">
+          <ActivityCategoryManager categories={categories} onChange={setCategories} />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isFormOpen} onOpenChange={(open) => !isSaving && setIsFormOpen(open)}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -369,18 +401,19 @@ export default function AdminActivitiesPage() {
             </FormField>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <FormField label="Type" required errors={fieldErrors.activity_type}>
+              <FormField label="Catégorie" required errors={fieldErrors.activity_type}>
                 <Select
                   value={form.activity_type}
                   onValueChange={(value) => setForm({ ...form, activity_type: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Type d'activité" />
+                    <SelectValue placeholder="Catégorie de l'activité" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ACTIVITY_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.slug}>
+                        {category.name}
+                        {!category.is_active && ' (masquée)'}
                       </SelectItem>
                     ))}
                   </SelectContent>
