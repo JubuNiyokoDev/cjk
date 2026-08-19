@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, History, SquarePen, ArrowLeft, MessagesSquare } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL } from '@/lib/api';
+import { ensureValidAccessToken } from '@/lib/auth';
+import { useAuthSession } from '@/hooks/use-auth-session';
+import type { ChatbotConversation, ChatbotHistoryMessage } from '@/lib/types';
 
 interface Message {
   id: string;
@@ -15,27 +21,113 @@ interface Message {
   timestamp: Date;
 }
 
+const SESSION_STORAGE_KEY = 'cjk_chat_session';
+const GREETING: Message = {
+  id: 'greeting',
+  text: "Bonjour ! Je suis l'assistant virtuel du CJK. Comment puis-je vous aider ?",
+  sender: 'bot',
+  timestamp: new Date(0),
+};
+
+function newSessionKey(): string {
+  return `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** N'autorise que les liens http/https dans les réponses du bot. */
+function safeHref(href: string | undefined): string | undefined {
+  if (!href) return undefined;
+  try {
+    const parsed = new URL(href, API_BASE_URL);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.href;
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+/** Rendu markdown "style ChatGPT" pour les réponses du bot. */
+function BotMarkdown({ text }: { text: string }) {
+  return (
+    <div className="text-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a: ({ href, children }) => {
+            const url = safeHref(href);
+            if (!url) return <span>{children}</span>;
+            return (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-600 font-medium underline underline-offset-2 hover:text-orange-700"
+              >
+                {children}
+              </a>
+            );
+          },
+          p: ({ children }) => <p className="my-1.5">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-4 my-1.5 space-y-1">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-4 my-1.5 space-y-1">{children}</ol>,
+          li: ({ children }) => <li className="marker:text-orange-500">{children}</li>,
+          h1: ({ children }) => <h3 className="font-bold text-sm mt-2 mb-1">{children}</h3>,
+          h2: ({ children }) => <h3 className="font-bold text-sm mt-2 mb-1">{children}</h3>,
+          h3: ({ children }) => <h4 className="font-semibold text-sm mt-2 mb-1">{children}</h4>,
+          strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+          code: ({ children }) => (
+            <code className="bg-gray-200/80 rounded px-1 py-0.5 text-xs font-mono">{children}</code>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-orange-400 pl-3 my-1.5 text-gray-600 italic">
+              {children}
+            </blockquote>
+          ),
+          hr: () => <hr className="my-2 border-gray-200" />,
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-1.5">
+              <table className="text-xs border-collapse">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => <th className="border border-gray-300 px-2 py-1 bg-gray-200/60 text-left">{children}</th>,
+          td: ({ children }) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [showPopover, setShowPopover] = useState(true);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Bonjour! Je suis l\'assistant virtuel du CJK. Comment puis-je vous aider?',
-      sender: 'bot',
-      timestamp: new Date(),
-    },
-  ]);
+  const [view, setView] = useState<'chat' | 'history'>('chat');
+  const [messages, setMessages] = useState<Message[]>([GREETING]);
+  const [conversations, setConversations] = useState<ChatbotConversation[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sessionKey = useRef(`session_${Date.now()}`);
+  const sessionKey = useRef<string>('');
+  const { isAuthenticated } = useAuthSession();
+
+  // Session persistée pour retrouver la conversation après un rechargement.
+  useEffect(() => {
+    const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) {
+      sessionKey.current = stored;
+      return;
+    }
+    const fresh = newSessionKey();
+    sessionStorage.setItem(SESSION_STORAGE_KEY, fresh);
+    sessionKey.current = fresh;
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, view]);
 
   useEffect(() => {
     if (showPopover) {
@@ -59,13 +151,18 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/chatbot/chat/`, {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (isAuthenticated) {
+        // Lie la conversation au compte pour l'historique.
+        const access = await ensureValidAccessToken();
+        if (access) headers.Authorization = `Bearer ${access}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/chatbot/chat/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
-          message: input,
+          message: userMessage.text,
           session_key: sessionKey.current,
         }),
       });
@@ -74,7 +171,7 @@ export default function Chatbot() {
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || 'Désolé, je n\'ai pas pu traiter votre demande.',
+        text: data.response || "Désolé, je n'ai pas pu traiter votre demande.",
         sender: 'bot',
         timestamp: new Date(),
       };
@@ -93,12 +190,74 @@ export default function Chatbot() {
     }
   };
 
+  const openHistory = async () => {
+    setView('history');
+    setIsHistoryLoading(true);
+    try {
+      const access = await ensureValidAccessToken();
+      if (!access) return;
+      const response = await fetch(`${API_BASE_URL}/api/chatbot/history/`, {
+        headers: { Authorization: `Bearer ${access}` },
+        cache: 'no-store',
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as ChatbotConversation[];
+      setConversations(Array.isArray(data) ? data : []);
+    } catch {
+      // silencieux : le panneau affichera l'état vide
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  const loadConversation = async (conversation: ChatbotConversation) => {
+    setIsHistoryLoading(true);
+    try {
+      const access = await ensureValidAccessToken();
+      if (!access) return;
+      const response = await fetch(`${API_BASE_URL}/api/chatbot/history/${conversation.id}/`, {
+        headers: { Authorization: `Bearer ${access}` },
+        cache: 'no-store',
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as { session_key: string; messages: ChatbotHistoryMessage[] };
+
+      // On reprend la même session pour continuer la conversation.
+      sessionKey.current = data.session_key;
+      sessionStorage.setItem(SESSION_STORAGE_KEY, data.session_key);
+
+      const restored: Message[] = data.messages.map((msg) => ({
+        id: String(msg.id),
+        text: msg.content,
+        sender: msg.role === 'user' ? 'user' : 'bot',
+        timestamp: new Date(msg.created_at),
+      }));
+      setMessages(restored.length > 0 ? restored : [GREETING]);
+      setView('chat');
+    } catch {
+      // silencieux : on reste sur le panneau historique
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  const startNewConversation = () => {
+    const fresh = newSessionKey();
+    sessionKey.current = fresh;
+    sessionStorage.setItem(SESSION_STORAGE_KEY, fresh);
+    setMessages([GREETING]);
+    setView('chat');
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   };
+
+  const formatConversationDate = (value: string) =>
+    new Date(value).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
     <>
@@ -119,11 +278,11 @@ export default function Chatbot() {
               <X className="h-4 w-4" />
             </button>
             <div className="flex items-start gap-3">
-              
+
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">Assistant CJK</p>
                 <p className="text-xs text-gray-600 mt-1">
-                  {messages[0].text}
+                  {GREETING.text}
                 </p>
               </div>
             </div>
@@ -176,92 +335,176 @@ export default function Chatbot() {
                 </Avatar>
                 <div>
                   <h3 className="text-white font-semibold">Assistant CJK</h3>
-                  <p className="text-blue-100 text-xs">En ligne</p>
+                  <p className="text-blue-100 text-xs">{view === 'history' ? 'Historique' : 'En ligne'}</p>
                 </div>
               </div>
-              <Button
-                onClick={() => setIsOpen(false)}
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </motion.div>
-
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-              <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'
-                      }`}
-                  >
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-2 ${message.sender === 'user'
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-800'
-                        }`}
+              <div className="flex items-center gap-1">
+                {isAuthenticated && view === 'chat' && (
+                  <>
+                    <Button
+                      onClick={startNewConversation}
+                      variant="ghost"
+                      size="icon"
+                      title="Nouvelle conversation"
+                      className="text-white hover:bg-white/20"
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                      <p
-                        className={`text-xs mt-1 ${message.sender === 'user'
-                            ? 'text-blue-100'
-                            : 'text-gray-500'
-                          }`}
-                      >
-                        {message.timestamp.toLocaleTimeString('fr-FR', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-                {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex justify-start"
-                  >
-                    <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                    </div>
-                  </motion.div>
+                      <SquarePen className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={openHistory}
+                      variant="ghost"
+                      size="icon"
+                      title="Mes conversations passées"
+                      className="text-white hover:bg-white/20"
+                    >
+                      <History className="h-5 w-5" />
+                    </Button>
+                  </>
                 )}
-              </div>
-            </ScrollArea>
-
-            {/* Input */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="p-4 border-t border-gray-200 bg-gray-50"
-            >
-              <div className="flex gap-2">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Écrivez votre message..."
-                  className="flex-1 rounded-md border-gray-300 focus:border-blue-500"
-                  disabled={isLoading}
-                />
+                {view === 'history' && (
+                  <Button
+                    onClick={() => setView('chat')}
+                    variant="ghost"
+                    size="icon"
+                    title="Retour à la discussion"
+                    className="text-white hover:bg-white/20"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                )}
                 <Button
-                  onClick={sendMessage}
-                  disabled={!input.trim() || isLoading}
-                  className="rounded-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  onClick={() => setIsOpen(false)}
+                  variant="ghost"
                   size="icon"
+                  className="text-white hover:bg-white/20"
                 >
-                  <Send className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             </motion.div>
+
+            {view === 'history' ? (
+              /* Panneau historique des conversations */
+              <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+                {isHistoryLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <div className="text-center py-12 px-4">
+                    <MessagesSquare className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-gray-600">Aucune conversation passée</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Vos prochaines discussions apparaîtront ici.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {conversations.map((conversation) => (
+                      <button
+                        key={conversation.id}
+                        onClick={() => loadConversation(conversation)}
+                        className="w-full text-left p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/60 transition-colors group"
+                      >
+                        <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-blue-700">
+                          {conversation.title || `Conversation ${conversation.id}`}
+                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-gray-400">
+                            {formatConversationDate(conversation.updated_at)}
+                          </p>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+                            {conversation.messages_count} messages
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            ) : (
+              /* Messages */
+              <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+                <div className="space-y-4">
+                  {messages.map((message, index) => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(index * 0.05, 0.4) }}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'
+                        }`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-2 ${message.sender === 'user'
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-800'
+                          }`}
+                      >
+                        {message.sender === 'bot' ? (
+                          <BotMarkdown text={message.text} />
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                        )}
+                        {message.timestamp.getTime() > 0 && (
+                          <p
+                            className={`text-xs mt-1 ${message.sender === 'user'
+                              ? 'text-blue-100'
+                              : 'text-gray-500'
+                              }`}
+                          >
+                            {message.timestamp.toLocaleTimeString('fr-FR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {isLoading && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex justify-start"
+                    >
+                      <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
+
+            {/* Input */}
+            {view === 'chat' && (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="p-4 border-t border-gray-200 bg-gray-50"
+              >
+                <div className="flex gap-2">
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Écrivez votre message..."
+                    className="flex-1 rounded-md border-gray-300 focus:border-blue-500"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    onClick={sendMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="rounded-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    size="icon"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

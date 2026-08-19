@@ -4,20 +4,27 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
-import { Shield, Scale, Ear, MessageCircle, CheckCircle, Users } from 'lucide-react';
+import type { CoreValue } from '@/lib/types';
+import { orgColor, orgIcon } from '@/lib/org-visuals';
 
-const values = [
-  { icon: Shield, name: 'Vérité', color: 'from-blue-500 to-blue-600' },
-  { icon: MessageCircle, name: 'Tolérance', color: 'from-green-500 to-green-600' },
-  { icon: Scale, name: 'Justice sociale', color: 'from-orange-500 to-red-600' },
-  { icon: CheckCircle, name: 'Intégrité', color: 'from-purple-500 to-pink-600' },
-  { icon: Ear, name: 'Écoute', color: 'from-yellow-500 to-orange-600' },
-  { icon: Users, name: 'Respect', color: 'from-cyan-500 to-blue-600' },
+/** Fallback si l'API est indisponible ou vide. */
+const DEFAULT_VALUES: Pick<CoreValue, 'id' | 'name' | 'icon' | 'color'>[] = [
+  { id: -1, name: 'Vérité', icon: 'shield', color: 'blue' },
+  { id: -2, name: 'Tolérance', icon: 'message-circle', color: 'green' },
+  { id: -3, name: 'Justice sociale', icon: 'scale', color: 'orange' },
+  { id: -4, name: 'Intégrité', icon: 'check-circle', color: 'purple' },
+  { id: -5, name: 'Écoute', icon: 'ear', color: 'yellow' },
+  { id: -6, name: 'Respect', icon: 'users', color: 'cyan' },
 ];
 
-export default function ValuesSection() {
+type ValuesSectionProps = {
+  values?: CoreValue[];
+};
+
+export default function ValuesSection({ values }: ValuesSectionProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const items = values && values.length > 0 ? values : DEFAULT_VALUES;
 
   return (
     <section className="py-20 bg-white" ref={ref}>
@@ -37,27 +44,30 @@ export default function ValuesSection() {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {values.map((value, index) => (
-            <motion.div
-              key={value.name}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{
-                duration: 0.5,
-                delay: index * 0.1,
-                type: 'spring',
-              }}
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className="relative group"
-            >
-              <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 text-center">
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${value.color} flex items-center justify-center transform group-hover:rotate-12 transition-transform`}>
-                  <value.icon className="w-8 h-8 text-white" />
+          {items.map((value, index) => {
+            const Icon = orgIcon(value.icon);
+            return (
+              <motion.div
+                key={value.id}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{
+                  duration: 0.5,
+                  delay: index * 0.1,
+                  type: 'spring',
+                }}
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="relative group"
+              >
+                <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 text-center">
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${orgColor(value.color)} flex items-center justify-center transform group-hover:rotate-12 transition-transform`}>
+                    <Icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="font-bold text-gray-900">{value.name}</h3>
                 </div>
-                <h3 className="font-bold text-gray-900">{value.name}</h3>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
 
         <motion.div

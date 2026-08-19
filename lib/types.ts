@@ -69,6 +69,94 @@ export type NewsItem = {
   updated_at: string;
 };
 
+/** Partenaire du CJK (géré via /api/organization/partners/). */
+export type Partner = {
+  id: number;
+  name: string;
+  country: string;
+  description: string;
+  logo: string | null;
+  website: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Valeur fondamentale du CJK (géré via /api/organization/values/). */
+export type CoreValue = {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Membre de l'équipe du CJK (géré via /api/organization/team/). */
+export type TeamMember = {
+  id: number;
+  name: string;
+  role: string;
+  description: string;
+  photo: string | null;
+  email: string;
+  phone: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Distinction / prix reçu par le CJK (géré via /api/organization/awards/). */
+export type Award = {
+  id: number;
+  name: string;
+  description: string;
+  year: string;
+  icon: string;
+  color: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Élément de la galerie (photo ou vidéo). */
+export type GalleryItem = {
+  id: string;
+  type: 'photo' | 'video' | string;
+  url: string;
+  thumbnail: string | null;
+  title: string;
+  category: string;
+  height: string;
+  order: number;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Conversation du chatbot (historique utilisateur connecté). */
+export type ChatbotConversation = {
+  id: number;
+  session_key: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  messages_count: number;
+};
+
+export type ChatbotHistoryMessage = {
+  id: number;
+  role: 'user' | 'bot';
+  content: string;
+  created_at: string;
+};
+
 export type Activity = {
   id: number;
   title: string;

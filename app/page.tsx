@@ -11,14 +11,17 @@ import AwardsSection from '@/components/sections/AwardsSection';
 import ContactSection from '@/components/sections/ContactSection';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import { getActivities, getBlogPosts, getNews } from '@/lib/api';
+import { getActivities, getAwards, getBlogPosts, getCoreValues, getNews, getPartners } from '@/lib/api';
 import { sortByDateDesc } from '@/lib/content';
 
 export default async function Home() {
-  const [activities, blogPosts, news] = await Promise.all([
+  const [activities, blogPosts, news, coreValues, awards, partners] = await Promise.all([
     getActivities({ is_published: true }),
     getBlogPosts({ is_published: true }),
     getNews({ is_published: true }),
+    getCoreValues(),
+    getAwards(),
+    getPartners(),
   ]);
   const sortedActivities = sortByDateDesc(activities);
   const sortedBlogPosts = sortByDateDesc(blogPosts);
@@ -30,13 +33,13 @@ export default async function Home() {
       <HeroSection />
       <AboutSection />
       <MissionSection />
-      <ValuesSection />
+      <ValuesSection values={coreValues} />
       <ActivitiesSection items={sortedActivities} />
       <BlogSection posts={sortedBlogPosts} />
       <NewsSection items={sortedNews} />
       <GallerySection />
       <HistorySection />
-      <AwardsSection />
+      <AwardsSection awards={awards} partners={partners} />
       <ContactSection />
       <Footer />
     </main>

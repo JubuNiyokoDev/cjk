@@ -7,8 +7,9 @@ import Image from 'next/image';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { useAuthSession } from '@/hooks/use-auth-session';
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Settings } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, LogOut, Settings, Pencil } from 'lucide-react';
 import StatusCard from '@/components/cards/StatusCard';
+import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import BlogCard from '@/components/cards/BlogCard';
 import { sortByDateDesc } from '@/lib/content';
@@ -18,7 +19,8 @@ import ActivityCard from '@/components/cards/ActivityCard';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { member, isAuthenticated, isLoading, logout, isOfficialMember } = useAuthSession();
+  const { member, isAuthenticated, isLoading, logout, isOfficialMember, refresh } = useAuthSession();
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
   const [news, setNews] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
@@ -106,7 +108,11 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <button className="absolute -bottom-2 -right-2 p-2.5 bg-white shadow-lg rounded-md text-slate-400 hover:text-orange-500 transition-colors border border-slate-50">
+              <button
+                onClick={() => setIsEditOpen(true)}
+                aria-label="Modifier mon profil"
+                className="absolute -bottom-2 -right-2 p-2.5 bg-white shadow-lg rounded-md text-slate-400 hover:text-orange-500 transition-colors border border-slate-50"
+              >
                 <Settings className="w-4 h-4" />
               </button>
             </div>
@@ -127,13 +133,22 @@ export default function ProfilePage() {
             </div>
 
 
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 px-6 py-3 bg-white text-red-500 font-semibold rounded-md shadow-sm border border-red-50 hover:bg-red-50 transition-all active:scale-95"
-            >
-              <LogOut className="w-4 h-4" />
-              Déconnexion
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsEditOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-md shadow-sm hover:from-orange-600 hover:to-red-600 transition-all active:scale-95"
+              >
+                <Pencil className="w-4 h-4" />
+                Modifier
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 px-6 py-3 bg-white text-red-500 font-semibold rounded-md shadow-sm border border-red-50 hover:bg-red-50 transition-all active:scale-95"
+              >
+                <LogOut className="w-4 h-4" />
+                Déconnexion
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -171,9 +186,9 @@ export default function ProfilePage() {
 
               {
                 !isOfficialMember && <div className="bg-orange-50 rounded-[12px] p-8 border border-orange-100">
-                  <p className="text-orange-800 font-semibold mb-2">Besoin d'aide ?</p>
+                  <p className="text-orange-800 font-semibold mb-2">Votre profil, à votre image</p>
                   <p className="text-orange-600/80 text-sm leading-relaxed">
-                    Vous souhaitez modifier vos informations ? Contactez le support technique.
+                    Cliquez sur « Modifier » pour mettre à jour vos informations, votre photo ou votre mot de passe.
                   </p>
                 </div>
               }
@@ -300,6 +315,13 @@ export default function ProfilePage() {
           </Tabs>
         </section>
       )}
+
+      <ProfileEditDialog
+        member={member}
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onSaved={refresh}
+      />
 
       <Footer />
     </main>

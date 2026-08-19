@@ -4,7 +4,16 @@
 export async function getActivity(id: number) {
   return safeFetch<Activity>(`/api/activities/${id}/`, undefined, { cache: 'no-store' });
 }
-import type { Activity, BlogCategory, BlogPost, NewsItem } from './types';
+import type {
+  Activity,
+  Award,
+  BlogCategory,
+  BlogPost,
+  CoreValue,
+  NewsItem,
+  Partner,
+  TeamMember,
+} from './types';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
@@ -146,6 +155,49 @@ export async function getActivities(params?: {
     '/api/activities/',
     params,
     { next: { revalidate: 60 } },
+    []
+  );
+  return unwrapList(data);
+}
+
+// --- Organisation (partenaires, valeurs, équipe, distinctions) ---
+// Contenu institutionnel qui change rarement : cache 5 minutes.
+
+export async function getPartners() {
+  const data = await safeFetch<Partner[] | Paginated<Partner>>(
+    '/api/organization/partners/',
+    undefined,
+    { next: { revalidate: 300 } },
+    []
+  );
+  return unwrapList(data);
+}
+
+export async function getCoreValues() {
+  const data = await safeFetch<CoreValue[] | Paginated<CoreValue>>(
+    '/api/organization/values/',
+    undefined,
+    { next: { revalidate: 300 } },
+    []
+  );
+  return unwrapList(data);
+}
+
+export async function getTeamMembers() {
+  const data = await safeFetch<TeamMember[] | Paginated<TeamMember>>(
+    '/api/organization/team/',
+    undefined,
+    { next: { revalidate: 300 } },
+    []
+  );
+  return unwrapList(data);
+}
+
+export async function getAwards() {
+  const data = await safeFetch<Award[] | Paginated<Award>>(
+    '/api/organization/awards/',
+    undefined,
+    { next: { revalidate: 300 } },
     []
   );
   return unwrapList(data);

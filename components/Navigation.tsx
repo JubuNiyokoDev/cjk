@@ -64,17 +64,22 @@ export default function Navigation() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center space-x-3"
           >
-            <div className="w-12 h-12 border border-red-500 bg-gradient-to-br from-orange-500 to-red-500 rounded-md flex items-center justify-center text-white font-bold text-xl">
-             <img src="/logo.jpeg" className="h-full w-full object-cover rounded-md inset-0" alt="CJK Logo" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">
-                Centre Jeunes Kamenge
-              </h1>
-              <p className="text-xs text-gray-600">Ensemble pour bâtir un monde de frères</p>
-            </div>
+            <Link
+              href="/"
+              aria-label="Retour à l'accueil"
+              className="flex items-center space-x-3 group/logo"
+            >
+              <div className="w-12 h-12 border border-red-500 bg-gradient-to-br from-orange-500 to-red-500 rounded-md flex items-center justify-center text-white font-bold text-xl transition-transform group-hover/logo:scale-105">
+                <img src="/logo.jpeg" className="h-full w-full object-cover rounded-md inset-0" alt="CJK Logo" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 group-hover/logo:text-orange-600 transition-colors">
+                  Centre Jeunes Kamenge
+                </h1>
+                <p className="text-xs text-gray-600">Ensemble pour bâtir un monde de frères</p>
+              </div>
+            </Link>
           </motion.div>
 
           <div className="hidden md:flex items-center space-x-8">
