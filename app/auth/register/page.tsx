@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { PasswordInput } from '@/components/ui/password-input';
 import { API_BASE_URL } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthSession } from '@/hooks/use-auth-session';
@@ -241,13 +242,15 @@ const { isAuthenticated } = useAuthSession();
               </div>
               <div>
                 <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
-                <input
-                  type="password"
-                  value={register.password}
-                  onChange={(e) => setRegister({ ...register, password: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                  required
-                />
+                <div className="mt-1">
+                  <PasswordInput
+                    value={register.password}
+                    onChange={(e) => setRegister({ ...register, password: e.target.value })}
+                    className="h-auto w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
                 <div className="mt-3">
                   <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
                     <div
@@ -279,13 +282,15 @@ const { isAuthenticated } = useAuthSession();
               </div>
               <div>
                 <label className="text-sm font-semibold text-gray-700">Confirmer le mot de passe</label>
-                <input
-                  type="password"
-                  value={register.confirm_password}
-                  onChange={(e) => setRegister({ ...register, confirm_password: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                  required
-                />
+                <div className="mt-1">
+                  <PasswordInput
+                    value={register.confirm_password}
+                    onChange={(e) => setRegister({ ...register, confirm_password: e.target.value })}
+                    className="h-auto w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
                 {!passwordsMatch && register.confirm_password.length > 0 && (
                   <p className="mt-2 text-xs text-red-500">Les mots de passe ne correspondent pas.</p>
                 )}

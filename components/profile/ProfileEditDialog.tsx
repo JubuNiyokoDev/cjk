@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { AdminApiError } from '@/lib/admin-api';
@@ -268,9 +269,8 @@ export default function ProfileEditDialog({ member, open, onOpenChange, onSaved 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="profile-current-password">Mot de passe actuel</Label>
-                <Input
+                <PasswordInput
                   id="profile-current-password"
-                  type="password"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
                   autoComplete="current-password"
@@ -279,9 +279,8 @@ export default function ProfileEditDialog({ member, open, onOpenChange, onSaved 
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="profile-new-password">Nouveau mot de passe</Label>
-                <Input
+                <PasswordInput
                   id="profile-new-password"
-                  type="password"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                   autoComplete="new-password"
@@ -291,9 +290,8 @@ export default function ProfileEditDialog({ member, open, onOpenChange, onSaved 
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="profile-confirm-password">Confirmer le nouveau mot de passe</Label>
-                <Input
+                <PasswordInput
                   id="profile-confirm-password"
-                  type="password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   autoComplete="new-password"

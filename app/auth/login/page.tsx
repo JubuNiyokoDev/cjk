@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { PasswordInput } from '@/components/ui/password-input';
 import { API_BASE_URL } from '@/lib/api';
 import { saveTokens } from '@/lib/auth';
 import { useAuthSession } from '@/hooks/use-auth-session';
@@ -128,13 +129,23 @@ export default function LoginPage() {
                 transition={{ duration: 0.4, delay: 0.4 }}
               >
                 <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
-                <input
-                  type="password"
-                  value={login.password}
-                  onChange={(e) => setLogin({ ...login, password: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
-                  required
-                />
+                <div className="mt-1">
+                  <PasswordInput
+                    value={login.password}
+                    onChange={(e) => setLogin({ ...login, password: e.target.value })}
+                    className="h-auto w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
+                <div className="mt-2 text-right">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-xs font-semibold text-orange-600 hover:text-orange-500 transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
+                </div>
               </motion.div>
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
