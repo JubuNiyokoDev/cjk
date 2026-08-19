@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { CalendarDays, Compass, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { CalendarDays, Compass, Edit, Trash2, Eye, EyeOff, Images } from 'lucide-react';
 import Link from 'next/link';
 import type { Activity } from '@/lib/types';
 import { API_BASE_URL } from '@/lib/api';
@@ -26,6 +26,8 @@ export default function ActivityCard({ activity, variant = 'full', showActions =
   const { toast } = useToast();
   const [isPublished, setIsPublished] = useState(activity.is_published);
   const [isDeleting, setIsDeleting] = useState(false);
+  const photoCount = (imageUrl ? 1 : 0) + (activity.images?.length ?? 0);
+  const previewTags = (activity.hashtag_list ?? []).slice(0, 3);
 
   const handleTogglePublish = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -85,7 +87,7 @@ export default function ActivityCard({ activity, variant = 'full', showActions =
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    router.push(`/admin/create?id=${activity.id}&type=activity`);
+    router.push('/admin/activities');
   };
 
   return (
@@ -143,6 +145,12 @@ export default function ActivityCard({ activity, variant = 'full', showActions =
             <div className="absolute top-4 left-4 px-3 py-1 rounded-md bg-white/90 text-sm font-semibold text-gray-800">
               {label}
             </div>
+            {photoCount > 1 && (
+              <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-semibold">
+                <Images className="w-3.5 h-3.5" />
+                {photoCount} photos
+              </div>
+            )}
           </div>
 
           <div className={cn('p-6 flex flex-col gap-3', isCompact ? 'sm:p-5' : 'sm:p-6')}>
@@ -162,6 +170,18 @@ export default function ActivityCard({ activity, variant = 'full', showActions =
             <div className="text-gray-600 prose prose-sm max-w-none line-clamp-6 overflow-hidden " data-color-mode="light">
               <MDEditor.Markdown source={activity.description} />
             </div>
+            {previewTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-auto pt-1">
+                {previewTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Link>

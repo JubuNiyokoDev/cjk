@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Newspaper, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Newspaper, Edit, Trash2, Eye, EyeOff, Images } from 'lucide-react';
 import Link from 'next/link';
 import type { NewsItem } from '@/lib/types';
 import { API_BASE_URL } from '@/lib/api';
@@ -24,6 +24,8 @@ export default function NewsCard({ item, variant = 'full', showActions = false }
   const { toast } = useToast();
   const [isPublished, setIsPublished] = useState(item.is_published);
   const [isDeleting, setIsDeleting] = useState(false);
+  const photoCount = (imageUrl ? 1 : 0) + (item.images?.length ?? 0);
+  const previewTags = (item.hashtag_list ?? []).slice(0, 3);
 
   const handleTogglePublish = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -83,7 +85,7 @@ export default function NewsCard({ item, variant = 'full', showActions = false }
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    router.push(`/admin/create?id=${item.id}&type=news`);
+    router.push('/admin/news');
   };
 
   return (
@@ -141,6 +143,12 @@ export default function NewsCard({ item, variant = 'full', showActions = false }
             <div className="absolute top-4 left-4 px-3 py-1 rounded-md bg-white/90 text-sm font-semibold text-blue-600">
               Actualité
             </div>
+            {photoCount > 1 && (
+              <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-semibold">
+                <Images className="w-3.5 h-3.5" />
+                {photoCount} photos
+              </div>
+            )}
           </div>
 
           <div className={cn('p-6 flex flex-col gap-3', isCompact ? 'sm:p-5' : 'sm:p-6')}>
@@ -152,9 +160,21 @@ export default function NewsCard({ item, variant = 'full', showActions = false }
             <h3 className={cn('font-bold text-gray-900', isCompact ? 'text-xl' : 'text-2xl')}>
               {item.title}
             </h3>
-            <div className="text-gray-600 prose prose-sm max-w-none line-clamp-6 overflow-hiddenb " data-color-mode="light">
+            <div className="text-gray-600 prose prose-sm max-w-none line-clamp-6 overflow-hidden " data-color-mode="light">
               <MDEditor.Markdown source={item.content} />
             </div>
+            {previewTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-auto pt-1">
+                {previewTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Link>

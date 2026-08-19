@@ -6,8 +6,13 @@ import ContentCtaButton from '@/components/sections/ContentCtaButton';
 import { getNews } from '@/lib/api';
 import { sortByDateDesc } from '@/lib/content';
 
-export default async function NewsPage() {
-  const news = await getNews({ is_published: true });
+type NewsPageProps = {
+  searchParams?: { hashtag?: string };
+};
+
+export default async function NewsPage({ searchParams }: NewsPageProps) {
+  const hashtag = searchParams?.hashtag?.trim() || undefined;
+  const news = await getNews({ is_published: true, hashtag });
   const sortedNews = sortByDateDesc(news);
 
   return (
@@ -34,16 +39,36 @@ export default async function NewsPage() {
             <ContentCtaButton
               loginLabel="Connexion staff"
               createLabel="Créer une actualité"
-              createHref="/admin/create?type=news"
+              createHref="/admin/news"
               unauthorizedLabel="Accès réservé"
               className="px-6 py-3 rounded-md bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
             />
           </div>
 
+          {hashtag && (
+            <div className="flex items-center justify-center gap-3 mb-10">
+              <span className="px-4 py-2 rounded-full bg-blue-500 text-white text-sm font-semibold shadow">
+                #{hashtag}
+              </span>
+              <Link
+                href="/news"
+                className="text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                Retirer le filtre ✕
+              </Link>
+            </div>
+          )}
+
           {sortedNews.length === 0 ? (
             <div className="bg-white rounded-3xl shadow-lg p-10 text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Aucune actualité disponible</h3>
-              <p className="text-gray-600">Les actualités apparaîtront ici dès qu&apos;elles seront publiées.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                {hashtag ? `Aucune actualité pour #${hashtag}` : 'Aucune actualité disponible'}
+              </h3>
+              <p className="text-gray-600">
+                {hashtag
+                  ? 'Essayez un autre hashtag ou retirez le filtre.'
+                  : 'Les actualités apparaîtront ici dès qu’elles seront publiées.'}
+              </p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

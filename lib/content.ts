@@ -1,4 +1,35 @@
-﻿import type { Activity } from './types';
+﻿import type { Activity, ContentImage } from './types';
+
+export type GallerySlide = {
+  url: string;
+  caption: string;
+};
+
+/**
+ * Construit la liste des diapositives d'une publication :
+ * image de couverture d'abord, puis la galerie triée (déjà ordonnée par l'API).
+ * Les doublons couverture/galerie sont écartés.
+ */
+export function buildGallerySlides(
+  baseUrl: string,
+  cover: string | null | undefined,
+  images: ContentImage[] | null | undefined
+): GallerySlide[] {
+  const slides: GallerySlide[] = [];
+  const seen = new Set<string>();
+  const coverUrl = resolveImageUrl(baseUrl, cover);
+  if (coverUrl) {
+    slides.push({ url: coverUrl, caption: '' });
+    seen.add(coverUrl);
+  }
+  (images ?? []).forEach((item) => {
+    const url = resolveImageUrl(baseUrl, item.image);
+    if (!url || seen.has(url)) return;
+    slides.push({ url, caption: item.caption ?? '' });
+    seen.add(url);
+  });
+  return slides;
+}
 
 const activityLabels: Record<string, string> = {
   sport: 'Sport',

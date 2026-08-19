@@ -20,6 +20,15 @@ export type BlogCategory = {
   slug: string;
 };
 
+/** Image de galerie attachée à un contenu (activité, actualité, article). */
+export type ContentImage = {
+  id: number;
+  image: string;
+  caption: string;
+  order: number;
+  created_at: string;
+};
+
 export type BlogPost = {
   id: number;
   title: string;
@@ -32,6 +41,10 @@ export type BlogPost = {
   content_type_id?: number | null;
   content: string;
   image: string | null;
+  images: ContentImage[];
+  hashtags: string;
+  hashtag_list: string[];
+  external_link: string;
   is_published: boolean;
   created_at: string;
   updated_at: string;
@@ -47,6 +60,10 @@ export type NewsItem = {
   author: number;
   author_name: string;
   image: string | null;
+  images: ContentImage[];
+  hashtags: string;
+  hashtag_list: string[];
+  external_link: string;
   is_published: boolean;
   created_at: string;
   updated_at: string;
@@ -60,6 +77,10 @@ export type Activity = {
   author: number;
   author_name: string;
   image: string | null;
+  images: ContentImage[];
+  hashtags: string;
+  hashtag_list: string[];
+  external_link: string;
   date_activite: string | null;
   is_published: boolean;
   created_at: string;

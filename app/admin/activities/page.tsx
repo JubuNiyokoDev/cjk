@@ -6,6 +6,11 @@ import AdminShell from '@/components/admin/AdminShell';
 import AdminContentTable, { type AdminContentRow } from '@/components/admin/AdminContentTable';
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import { FormField, ImageField } from '@/components/admin/form-fields';
+import GalleryManager, {
+  releasePendingImages,
+  type PendingImage,
+} from '@/components/admin/GalleryManager';
+import ProPostFields from '@/components/admin/ProPostFields';
 import ContentEditor from '@/components/ui/content-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +40,8 @@ import {
   togglePublish,
   updateActivity,
 } from '@/lib/admin-api';
-import type { Activity } from '@/lib/types';
+import { uploadImages, type UploadProgress } from '@/lib/upload';
+import type { Activity, ContentImage } from '@/lib/types';
 
 const ALL_TYPES = 'all';
 
@@ -46,6 +52,8 @@ type ActivityFormState = {
   date_activite: string;
   is_published: boolean;
   image: File | null | undefined;
+  hashtags: string;
+  external_link: string;
 };
 
 const emptyForm: ActivityFormState = {
@@ -55,6 +63,8 @@ const emptyForm: ActivityFormState = {
   date_activite: '',
   is_published: false,
   image: undefined,
+  hashtags: '',
+  external_link: '',
 };
 
 function activityTypeLabel(value: string): string {
@@ -75,6 +85,10 @@ export default function AdminActivitiesPage() {
   const [form, setForm] = useState<ActivityFormState>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  const [galleryImages, setGalleryImages] = useState<ContentImage[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   const [deletingItem, setDeletingItem] = useState<Activity | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -103,10 +117,20 @@ export default function AdminActivitiesPage() {
     loadData();
   }, [isAuthenticated, isOfficialMember, loadData]);
 
+  const resetGallery = useCallback(() => {
+    setPendingImages((current) => {
+      releasePendingImages(current);
+      return [];
+    });
+    setGalleryImages([]);
+    setUploadProgress(null);
+  }, []);
+
   const openCreateForm = () => {
     setEditingItem(null);
     setForm(emptyForm);
     setFieldErrors({});
+    resetGallery();
     setIsFormOpen(true);
   };
 
@@ -119,9 +143,37 @@ export default function AdminActivitiesPage() {
       date_activite: item.date_activite ? item.date_activite.slice(0, 10) : '',
       is_published: item.is_published,
       image: undefined,
+      hashtags: item.hashtags ?? '',
+      external_link: item.external_link ?? '',
     });
     setFieldErrors({});
+    resetGallery();
+    setGalleryImages(item.images ?? []);
     setIsFormOpen(true);
+  };
+
+  /** Envoie les fichiers en attente vers la galerie avec progression réelle. */
+  const uploadPendingImages = async (contentId: number): Promise<boolean> => {
+    if (pendingImages.length === 0) return true;
+    setUploadProgress({ loaded: 0, total: 0, percent: 0 });
+    try {
+      const created = await uploadImages(
+        'activity',
+        contentId,
+        pendingImages.map((item) => item.file),
+        pendingImages.map((item) => item.caption),
+        setUploadProgress
+      );
+      releasePendingImages(pendingImages);
+      setPendingImages([]);
+      setGalleryImages((current) => [...current, ...created]);
+      return true;
+    } catch (error) {
+      showError(error, "Impossible d'envoyer les photos.");
+      return false;
+    } finally {
+      setUploadProgress(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -144,15 +196,28 @@ export default function AdminActivitiesPage() {
         date_activite: form.date_activite,
         is_published: form.is_published,
         image: form.image,
+        hashtags: form.hashtags.trim(),
+        external_link: form.external_link.trim(),
       };
 
+      let saved: Activity;
       if (editingItem) {
-        await updateActivity(editingItem.id, payload);
+        saved = await updateActivity(editingItem.id, payload);
         toast({ title: 'Activité mise à jour', description: form.title });
       } else {
-        await createActivity(payload);
+        saved = await createActivity(payload);
         toast({ title: 'Activité créée', description: form.title });
       }
+
+      const uploaded = await uploadPendingImages(saved.id);
+      if (!uploaded) {
+        // La publication est enregistrée mais les photos ont échoué :
+        // on garde le formulaire ouvert en mode édition pour réessayer.
+        setEditingItem(saved);
+        await loadData();
+        return;
+      }
+
       setIsFormOpen(false);
       await loadData();
     } catch (error) {
@@ -220,6 +285,11 @@ export default function AdminActivitiesPage() {
         </Badge>
         {item.date_activite && (
           <span>{new Date(item.date_activite).toLocaleDateString('fr-FR')}</span>
+        )}
+        {(item.images?.length ?? 0) > 0 && (
+          <Badge variant="secondary" className="font-normal bg-orange-50 text-orange-700">
+            {item.images.length} photo{item.images.length > 1 ? 's' : ''}
+          </Badge>
         )}
       </span>
     ),
@@ -340,10 +410,31 @@ export default function AdminActivitiesPage() {
             </FormField>
 
             <ImageField
+              label="Image de couverture"
               existingUrl={editingItem?.image}
               value={form.image}
               onChange={(image) => setForm({ ...form, image })}
               errors={fieldErrors.image}
+            />
+
+            <GalleryManager
+              kind="activity"
+              contentId={editingItem?.id ?? null}
+              images={galleryImages}
+              onImagesChange={setGalleryImages}
+              pending={pendingImages}
+              onPendingChange={setPendingImages}
+              uploadProgress={uploadProgress}
+              disabled={isSaving}
+            />
+
+            <ProPostFields
+              hashtags={form.hashtags}
+              onHashtagsChange={(hashtags) => setForm({ ...form, hashtags })}
+              externalLink={form.external_link}
+              onExternalLinkChange={(external_link) => setForm({ ...form, external_link })}
+              hashtagsErrors={fieldErrors.hashtags}
+              externalLinkErrors={fieldErrors.external_link}
             />
 
             <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
@@ -369,7 +460,11 @@ export default function AdminActivitiesPage() {
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
               >
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingItem ? 'Enregistrer' : 'Créer'}
+                {uploadProgress
+                  ? `Envoi… ${uploadProgress.percent}%`
+                  : editingItem
+                    ? 'Enregistrer'
+                    : 'Créer'}
               </Button>
             </div>
           </div>

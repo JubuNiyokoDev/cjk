@@ -102,6 +102,7 @@ async function safeFetch<T>(
 export async function getBlogPosts(params?: {
   category?: string | number;
   is_published?: boolean;
+  hashtag?: string;
 }) {
   const data = await safeFetch<BlogPost[] | Paginated<BlogPost>>(
     '/api/blog/posts/',
@@ -126,7 +127,7 @@ export async function getBlogCategories() {
   return unwrapList(data);
 }
 
-export async function getNews(params?: { is_published?: boolean }) {
+export async function getNews(params?: { is_published?: boolean; hashtag?: string }) {
   const data = await safeFetch<NewsItem[] | Paginated<NewsItem>>(
     '/api/news/',
     params,
@@ -139,6 +140,7 @@ export async function getNews(params?: { is_published?: boolean }) {
 export async function getActivities(params?: {
   activity_type?: string;
   is_published?: boolean;
+  hashtag?: string;
 }) {
   const data = await safeFetch<Activity[] | Paginated<Activity>>(
     '/api/activities/',

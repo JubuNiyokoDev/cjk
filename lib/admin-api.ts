@@ -148,6 +148,8 @@ export type BlogPostInput = {
   category?: number | null;
   is_published: boolean;
   image?: File | null;
+  hashtags?: string;
+  external_link?: string;
 };
 
 export async function listAdminBlogPosts(): Promise<BlogPost[]> {
@@ -165,6 +167,8 @@ export async function createBlogPost(input: BlogPostInput): Promise<BlogPost> {
       category: input.category ?? undefined,
       is_published: input.is_published,
       image: input.image,
+      hashtags: input.hashtags,
+      external_link: input.external_link,
     }),
   });
 }
@@ -179,6 +183,8 @@ export async function updateBlogPost(id: number, input: Partial<BlogPostInput>):
       category: input.category ?? undefined,
       is_published: input.is_published,
       image: input.image,
+      hashtags: input.hashtags,
+      external_link: input.external_link,
     }),
   });
 }
@@ -219,6 +225,8 @@ export type NewsInput = {
   content: string;
   is_published: boolean;
   image?: File | null;
+  hashtags?: string;
+  external_link?: string;
 };
 
 export async function listAdminNews(): Promise<NewsItem[]> {
@@ -234,6 +242,8 @@ export async function createNews(input: NewsInput): Promise<NewsItem> {
       content: input.content,
       is_published: input.is_published,
       image: input.image,
+      hashtags: input.hashtags,
+      external_link: input.external_link,
     }),
   });
 }
@@ -246,6 +256,8 @@ export async function updateNews(id: number, input: Partial<NewsInput>): Promise
       content: input.content,
       is_published: input.is_published,
       image: input.image,
+      hashtags: input.hashtags,
+      external_link: input.external_link,
     }),
   });
 }
@@ -273,6 +285,8 @@ export type ActivityInput = {
   date_activite: string;
   is_published: boolean;
   image?: File | null;
+  hashtags?: string;
+  external_link?: string;
 };
 
 export async function listAdminActivities(): Promise<Activity[]> {
@@ -290,6 +304,8 @@ export async function createActivity(input: ActivityInput): Promise<Activity> {
       date_activite: input.date_activite,
       is_published: input.is_published,
       image: input.image,
+      hashtags: input.hashtags,
+      external_link: input.external_link,
     }),
   });
 }
@@ -304,6 +320,8 @@ export async function updateActivity(id: number, input: Partial<ActivityInput>):
       date_activite: input.date_activite,
       is_published: input.is_published,
       image: input.image,
+      hashtags: input.hashtags,
+      external_link: input.external_link,
     }),
   });
 }

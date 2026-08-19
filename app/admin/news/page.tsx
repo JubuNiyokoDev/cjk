@@ -6,8 +6,14 @@ import AdminShell from '@/components/admin/AdminShell';
 import AdminContentTable, { type AdminContentRow } from '@/components/admin/AdminContentTable';
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import { FormField, ImageField } from '@/components/admin/form-fields';
+import GalleryManager, {
+  releasePendingImages,
+  type PendingImage,
+} from '@/components/admin/GalleryManager';
+import ProPostFields from '@/components/admin/ProPostFields';
 import ContentEditor from '@/components/ui/content-editor';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -26,13 +32,16 @@ import {
   togglePublish,
   updateNews,
 } from '@/lib/admin-api';
-import type { NewsItem } from '@/lib/types';
+import { uploadImages, type UploadProgress } from '@/lib/upload';
+import type { ContentImage, NewsItem } from '@/lib/types';
 
 type NewsFormState = {
   title: string;
   content: string;
   is_published: boolean;
   image: File | null | undefined;
+  hashtags: string;
+  external_link: string;
 };
 
 const emptyForm: NewsFormState = {
@@ -40,6 +49,8 @@ const emptyForm: NewsFormState = {
   content: '',
   is_published: false,
   image: undefined,
+  hashtags: '',
+  external_link: '',
 };
 
 export default function AdminNewsPage() {
@@ -55,6 +66,10 @@ export default function AdminNewsPage() {
   const [form, setForm] = useState<NewsFormState>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  const [galleryImages, setGalleryImages] = useState<ContentImage[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   const [deletingItem, setDeletingItem] = useState<NewsItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -83,10 +98,20 @@ export default function AdminNewsPage() {
     loadData();
   }, [isAuthenticated, isOfficialMember, loadData]);
 
+  const resetGallery = useCallback(() => {
+    setPendingImages((current) => {
+      releasePendingImages(current);
+      return [];
+    });
+    setGalleryImages([]);
+    setUploadProgress(null);
+  }, []);
+
   const openCreateForm = () => {
     setEditingItem(null);
     setForm(emptyForm);
     setFieldErrors({});
+    resetGallery();
     setIsFormOpen(true);
   };
 
@@ -97,9 +122,37 @@ export default function AdminNewsPage() {
       content: item.content,
       is_published: item.is_published,
       image: undefined,
+      hashtags: item.hashtags ?? '',
+      external_link: item.external_link ?? '',
     });
     setFieldErrors({});
+    resetGallery();
+    setGalleryImages(item.images ?? []);
     setIsFormOpen(true);
+  };
+
+  /** Envoie les fichiers en attente vers la galerie avec progression réelle. */
+  const uploadPendingImages = async (contentId: number): Promise<boolean> => {
+    if (pendingImages.length === 0) return true;
+    setUploadProgress({ loaded: 0, total: 0, percent: 0 });
+    try {
+      const created = await uploadImages(
+        'news',
+        contentId,
+        pendingImages.map((item) => item.file),
+        pendingImages.map((item) => item.caption),
+        setUploadProgress
+      );
+      releasePendingImages(pendingImages);
+      setPendingImages([]);
+      setGalleryImages((current) => [...current, ...created]);
+      return true;
+    } catch (error) {
+      showError(error, "Impossible d'envoyer les photos.");
+      return false;
+    } finally {
+      setUploadProgress(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -120,15 +173,27 @@ export default function AdminNewsPage() {
         content: form.content,
         is_published: form.is_published,
         image: form.image,
+        hashtags: form.hashtags.trim(),
+        external_link: form.external_link.trim(),
       };
 
+      let saved: NewsItem;
       if (editingItem) {
-        await updateNews(editingItem.id, payload);
+        saved = await updateNews(editingItem.id, payload);
         toast({ title: 'Actualité mise à jour', description: form.title });
       } else {
-        await createNews(payload);
+        saved = await createNews(payload);
         toast({ title: 'Actualité créée', description: form.title });
       }
+
+      const uploaded = await uploadPendingImages(saved.id);
+      if (!uploaded) {
+        // Publication enregistrée mais photos en échec : on reste en édition.
+        setEditingItem(saved);
+        await loadData();
+        return;
+      }
+
       setIsFormOpen(false);
       await loadData();
     } catch (error) {
@@ -181,7 +246,16 @@ export default function AdminNewsPage() {
     title: item.title,
     image: item.image,
     is_published: item.is_published,
-    meta: <span>{new Date(item.created_at).toLocaleDateString('fr-FR')}</span>,
+    meta: (
+      <span className="flex items-center gap-2 flex-wrap">
+        <span>{new Date(item.created_at).toLocaleDateString('fr-FR')}</span>
+        {(item.images?.length ?? 0) > 0 && (
+          <Badge variant="secondary" className="font-normal bg-orange-50 text-orange-700">
+            {item.images.length} photo{item.images.length > 1 ? 's' : ''}
+          </Badge>
+        )}
+      </span>
+    ),
   }));
 
   return (
@@ -245,10 +319,31 @@ export default function AdminNewsPage() {
             </FormField>
 
             <ImageField
+              label="Image de couverture"
               existingUrl={editingItem?.image}
               value={form.image}
               onChange={(image) => setForm({ ...form, image })}
               errors={fieldErrors.image}
+            />
+
+            <GalleryManager
+              kind="news"
+              contentId={editingItem?.id ?? null}
+              images={galleryImages}
+              onImagesChange={setGalleryImages}
+              pending={pendingImages}
+              onPendingChange={setPendingImages}
+              uploadProgress={uploadProgress}
+              disabled={isSaving}
+            />
+
+            <ProPostFields
+              hashtags={form.hashtags}
+              onHashtagsChange={(hashtags) => setForm({ ...form, hashtags })}
+              externalLink={form.external_link}
+              onExternalLinkChange={(external_link) => setForm({ ...form, external_link })}
+              hashtagsErrors={fieldErrors.hashtags}
+              externalLinkErrors={fieldErrors.external_link}
             />
 
             <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
@@ -274,7 +369,11 @@ export default function AdminNewsPage() {
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
               >
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingItem ? 'Enregistrer' : 'Créer'}
+                {uploadProgress
+                  ? `Envoi… ${uploadProgress.percent}%`
+                  : editingItem
+                    ? 'Enregistrer'
+                    : 'Créer'}
               </Button>
             </div>
           </div>

@@ -6,8 +6,11 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import LikeButton from '@/components/social/LikeButton';
 import CommentsPanel from '@/components/social/CommentsPanel';
+import PostGallery from '@/components/content/PostGallery';
+import HashtagList from '@/components/content/HashtagList';
+import ExternalLinkButton from '@/components/content/ExternalLinkButton';
 import { getBlogPost, API_BASE_URL } from '@/lib/api';
-import { formatDate, resolveImageUrl } from '@/lib/content';
+import { buildGallerySlides, formatDate } from '@/lib/content';
 import { BookOpen, ChevronLeft } from 'lucide-react';
 import Loading from './loading';
 import MDEditor from '@uiw/react-md-editor';
@@ -31,7 +34,7 @@ type BlogPostPageProps = {
 
 async function BlogPostContent({ postId }: { postId: number }) {
   const post = await getBlogPost(postId);
-  const imageUrl = resolveImageUrl(API_BASE_URL, post.image);
+  const slides = buildGallerySlides(API_BASE_URL, post.image, post.images);
   const contentType = resolveContentTypeValue(post);
 
   return (
@@ -46,15 +49,17 @@ async function BlogPostContent({ postId }: { postId: number }) {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-10 border border-gray-100">
-        <div className="relative h-64 sm:h-80">
-          {imageUrl ? (
-            <img src={imageUrl} alt={post.title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-              <BookOpen className="w-12 h-12 text-white" />
-            </div>
-          )}
-          <div className="absolute top-6 left-6 px-4 py-1.5 rounded-md bg-white/90 text-xs font-semibold text-orange-600 border border-orange-200">
+        <div className="relative">
+          <PostGallery
+            slides={slides}
+            title={post.title}
+            fallback={
+              <div className="h-full w-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                <BookOpen className="w-12 h-12 text-white" />
+              </div>
+            }
+          />
+          <div className="absolute top-6 left-6 z-10 px-4 py-1.5 rounded-md bg-white/90 text-xs font-semibold text-orange-600 border border-orange-200 pointer-events-none">
             {post.category_name}
           </div>
         </div>
@@ -70,6 +75,12 @@ async function BlogPostContent({ postId }: { postId: number }) {
           <div className="prose max-w-none text-gray-700" data-color-mode="light">
             <MDEditor.Markdown source={post.content} />
           </div>
+          {((post.hashtag_list?.length ?? 0) > 0 || post.external_link) && (
+            <div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+              <HashtagList tags={post.hashtag_list ?? []} basePath="/blog" />
+              <ExternalLinkButton url={post.external_link} />
+            </div>
+          )}
         </div>
         <div className="border-t border-gray-100 px-6 sm:px-8 py-4 flex flex-wrap gap-4 items-center justify-between">
           <LikeButton

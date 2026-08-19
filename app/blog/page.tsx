@@ -7,13 +7,14 @@ import { getBlogCategories, getBlogPosts } from '@/lib/api';
 import { sortByDateDesc } from '@/lib/content';
 
 type BlogPageProps = {
-  searchParams?: { category?: string };
+  searchParams?: { category?: string; hashtag?: string };
 };
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
   const category = searchParams?.category;
+  const hashtag = searchParams?.hashtag?.trim() || undefined;
   const [posts, categories] = await Promise.all([
-    getBlogPosts({ category, is_published: true }),
+    getBlogPosts({ category, is_published: true, hashtag }),
     getBlogCategories(),
   ]);
 
@@ -43,7 +44,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             <ContentCtaButton
               loginLabel="Se connecter ou créer un compte"
               createLabel="Créer un article"
-              createHref="/admin/create?type=blog"
+              createHref="/admin/blog"
               unauthorizedLabel="Accès réservé"
               className="px-6 py-3 rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
             />
@@ -75,10 +76,30 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             ))}
           </div>
 
+          {hashtag && (
+            <div className="flex items-center justify-center gap-3 mb-10">
+              <span className="px-4 py-2 rounded-full bg-orange-500 text-white text-sm font-semibold shadow">
+                #{hashtag}
+              </span>
+              <Link
+                href={category ? `/blog?category=${category}` : '/blog'}
+                className="text-sm font-semibold text-gray-500 hover:text-orange-600 transition-colors"
+              >
+                Retirer le filtre ✕
+              </Link>
+            </div>
+          )}
+
           {sortedPosts.length === 0 ? (
             <div className="bg-white rounded-md shadow-lg p-10 text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Aucun article disponible</h3>
-              <p className="text-gray-600">Les publications apparaîtront ici dès qu&apos;elles seront en ligne.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                {hashtag ? `Aucun article pour #${hashtag}` : 'Aucun article disponible'}
+              </h3>
+              <p className="text-gray-600">
+                {hashtag
+                  ? 'Essayez un autre hashtag ou retirez le filtre.'
+                  : 'Les publications apparaîtront ici dès qu’elles seront en ligne.'}
+              </p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

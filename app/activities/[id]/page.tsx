@@ -3,15 +3,18 @@
 import { Suspense } from 'react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import PostGallery from '@/components/content/PostGallery';
+import HashtagList from '@/components/content/HashtagList';
+import ExternalLinkButton from '@/components/content/ExternalLinkButton';
 import { getActivity, API_BASE_URL } from '@/lib/api';
-import { formatDate, getActivityLabel, resolveImageUrl } from '@/lib/content';
+import { buildGallerySlides, formatDate, getActivityLabel } from '@/lib/content';
 import { Compass, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import MDEditor from '@uiw/react-md-editor';
 
 async function ActivityDetailContent({ activityId }: { activityId: number }) {
   const activity = await getActivity(activityId);
-  const imageUrl = resolveImageUrl(API_BASE_URL, activity.image);
+  const slides = buildGallerySlides(API_BASE_URL, activity.image, activity.images);
   const label = getActivityLabel(activity.activity_type);
 
   return (
@@ -25,15 +28,17 @@ async function ActivityDetailContent({ activityId }: { activityId: number }) {
         </Link>
       </div>
       <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-10 border border-gray-100">
-        <div className="relative h-64 sm:h-80">
-          {imageUrl ? (
-            <img src={imageUrl} alt={activity.title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-orange-500 to-red-500">
-              <Compass className="w-12 h-12 text-white" />
-            </div>
-          )}
-          <div className="absolute top-6 left-6 px-4 py-1.5 rounded-md bg-white/90 text-xs font-semibold text-orange-600 border border-orange-200">
+        <div className="relative">
+          <PostGallery
+            slides={slides}
+            title={activity.title}
+            fallback={
+              <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-orange-500 to-red-500">
+                <Compass className="w-12 h-12 text-white" />
+              </div>
+            }
+          />
+          <div className="absolute top-6 left-6 z-10 px-4 py-1.5 rounded-md bg-white/90 text-xs font-semibold text-orange-600 border border-orange-200 pointer-events-none">
             {label}
           </div>
         </div>
@@ -50,9 +55,15 @@ async function ActivityDetailContent({ activityId }: { activityId: number }) {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             {activity.title}
           </h1>
-          <div className="prose max-w-none text-gray-700"  data-color-mode="light ">
+          <div className="prose max-w-none text-gray-700" data-color-mode="light">
             <MDEditor.Markdown source={activity.description} />
           </div>
+          {((activity.hashtag_list?.length ?? 0) > 0 || activity.external_link) && (
+            <div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+              <HashtagList tags={activity.hashtag_list ?? []} basePath="/activities" />
+              <ExternalLinkButton url={activity.external_link} />
+            </div>
+          )}
         </div>
       </div>
     </div>

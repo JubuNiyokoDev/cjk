@@ -6,8 +6,14 @@ import AdminShell from '@/components/admin/AdminShell';
 import AdminContentTable, { type AdminContentRow } from '@/components/admin/AdminContentTable';
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import { FormField, ImageField } from '@/components/admin/form-fields';
+import GalleryManager, {
+  releasePendingImages,
+  type PendingImage,
+} from '@/components/admin/GalleryManager';
+import ProPostFields from '@/components/admin/ProPostFields';
 import ContentEditor from '@/components/ui/content-editor';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -38,7 +44,8 @@ import {
   updateBlogPost,
   updateCategory,
 } from '@/lib/admin-api';
-import type { BlogCategory, BlogPost } from '@/lib/types';
+import { uploadImages, type UploadProgress } from '@/lib/upload';
+import type { BlogCategory, BlogPost, ContentImage } from '@/lib/types';
 
 const NO_CATEGORY = 'none';
 
@@ -48,6 +55,8 @@ type PostFormState = {
   category: string;
   is_published: boolean;
   image: File | null | undefined;
+  hashtags: string;
+  external_link: string;
 };
 
 const emptyPostForm: PostFormState = {
@@ -56,6 +65,8 @@ const emptyPostForm: PostFormState = {
   category: NO_CATEGORY,
   is_published: false,
   image: undefined,
+  hashtags: '',
+  external_link: '',
 };
 
 export default function AdminBlogPage() {
@@ -73,6 +84,10 @@ export default function AdminBlogPage() {
   const [form, setForm] = useState<PostFormState>(emptyPostForm);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  const [galleryImages, setGalleryImages] = useState<ContentImage[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   // Suppression
   const [deletingPost, setDeletingPost] = useState<BlogPost | null>(null);
@@ -117,10 +132,20 @@ export default function AdminBlogPage() {
 
   /* ----------------------------- Articles ----------------------------- */
 
+  const resetGallery = useCallback(() => {
+    setPendingImages((current) => {
+      releasePendingImages(current);
+      return [];
+    });
+    setGalleryImages([]);
+    setUploadProgress(null);
+  }, []);
+
   const openCreateForm = () => {
     setEditingPost(null);
     setForm(emptyPostForm);
     setFieldErrors({});
+    resetGallery();
     setIsFormOpen(true);
   };
 
@@ -132,9 +157,37 @@ export default function AdminBlogPage() {
       category: post.category ? String(post.category) : NO_CATEGORY,
       is_published: post.is_published,
       image: undefined,
+      hashtags: post.hashtags ?? '',
+      external_link: post.external_link ?? '',
     });
     setFieldErrors({});
+    resetGallery();
+    setGalleryImages(post.images ?? []);
     setIsFormOpen(true);
+  };
+
+  /** Envoie les fichiers en attente vers la galerie avec progression réelle. */
+  const uploadPendingImages = async (contentId: number): Promise<boolean> => {
+    if (pendingImages.length === 0) return true;
+    setUploadProgress({ loaded: 0, total: 0, percent: 0 });
+    try {
+      const created = await uploadImages(
+        'blog',
+        contentId,
+        pendingImages.map((item) => item.file),
+        pendingImages.map((item) => item.caption),
+        setUploadProgress
+      );
+      releasePendingImages(pendingImages);
+      setPendingImages([]);
+      setGalleryImages((current) => [...current, ...created]);
+      return true;
+    } catch (error) {
+      showError(error, "Impossible d'envoyer les photos.");
+      return false;
+    } finally {
+      setUploadProgress(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -156,15 +209,27 @@ export default function AdminBlogPage() {
         category: form.category === NO_CATEGORY ? null : Number(form.category),
         is_published: form.is_published,
         image: form.image,
+        hashtags: form.hashtags.trim(),
+        external_link: form.external_link.trim(),
       };
 
+      let saved: BlogPost;
       if (editingPost) {
-        await updateBlogPost(editingPost.id, payload);
+        saved = await updateBlogPost(editingPost.id, payload);
         toast({ title: 'Article mis à jour', description: form.title });
       } else {
-        await createBlogPost(payload);
+        saved = await createBlogPost(payload);
         toast({ title: 'Article créé', description: form.title });
       }
+
+      const uploaded = await uploadPendingImages(saved.id);
+      if (!uploaded) {
+        // Article enregistré mais photos en échec : on reste en édition.
+        setEditingPost(saved);
+        await loadData();
+        return;
+      }
+
       setIsFormOpen(false);
       await loadData();
     } catch (error) {
@@ -274,9 +339,16 @@ export default function AdminBlogPage() {
     image: post.image,
     is_published: post.is_published,
     meta: (
-      <span>
-        {post.category_name || 'Sans catégorie'} ·{' '}
-        {new Date(post.created_at).toLocaleDateString('fr-FR')}
+      <span className="flex items-center gap-2 flex-wrap">
+        <span>
+          {post.category_name || 'Sans catégorie'} ·{' '}
+          {new Date(post.created_at).toLocaleDateString('fr-FR')}
+        </span>
+        {(post.images?.length ?? 0) > 0 && (
+          <Badge variant="secondary" className="font-normal bg-orange-50 text-orange-700">
+            {post.images.length} photo{post.images.length > 1 ? 's' : ''}
+          </Badge>
+        )}
       </span>
     ),
   }));
@@ -457,10 +529,31 @@ export default function AdminBlogPage() {
             </FormField>
 
             <ImageField
+              label="Image de couverture"
               existingUrl={editingPost?.image}
               value={form.image}
               onChange={(image) => setForm({ ...form, image })}
               errors={fieldErrors.image}
+            />
+
+            <GalleryManager
+              kind="blog"
+              contentId={editingPost?.id ?? null}
+              images={galleryImages}
+              onImagesChange={setGalleryImages}
+              pending={pendingImages}
+              onPendingChange={setPendingImages}
+              uploadProgress={uploadProgress}
+              disabled={isSaving}
+            />
+
+            <ProPostFields
+              hashtags={form.hashtags}
+              onHashtagsChange={(hashtags) => setForm({ ...form, hashtags })}
+              externalLink={form.external_link}
+              onExternalLinkChange={(external_link) => setForm({ ...form, external_link })}
+              hashtagsErrors={fieldErrors.hashtags}
+              externalLinkErrors={fieldErrors.external_link}
             />
 
             <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
@@ -486,7 +579,11 @@ export default function AdminBlogPage() {
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
               >
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingPost ? 'Enregistrer' : 'Créer'}
+                {uploadProgress
+                  ? `Envoi… ${uploadProgress.percent}%`
+                  : editingPost
+                    ? 'Enregistrer'
+                    : 'Créer'}
               </Button>
             </div>
           </div>
