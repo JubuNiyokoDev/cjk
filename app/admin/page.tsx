@@ -8,6 +8,7 @@ import {
   Newspaper,
   CalendarDays,
   Image as ImageIcon,
+  Building2,
   ArrowRight,
   Loader2,
 } from 'lucide-react';
@@ -66,6 +67,13 @@ const sections = [
     label: 'Galerie',
     description: 'Photos et vidéos du Centre',
     icon: ImageIcon,
+    statsKey: null,
+  },
+  {
+    href: '/admin/organisation',
+    label: 'Organisation',
+    description: 'Partenaires, valeurs, équipe et distinctions',
+    icon: Building2,
     statsKey: null,
   },
 ];

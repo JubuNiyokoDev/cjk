@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Newspaper, CalendarDays, Image as ImageIcon, LayoutDashboard } from 'lucide-react';
+import { FileText, Newspaper, CalendarDays, Image as ImageIcon, LayoutDashboard, Building2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { useAuthSession } from '@/hooks/use-auth-session';
@@ -16,6 +16,7 @@ const adminNav = [
   { href: '/admin/news', label: 'Actualités', icon: Newspaper },
   { href: '/admin/activities', label: 'Activités & Formations', icon: CalendarDays },
   { href: '/admin/gallery', label: 'Galerie', icon: ImageIcon },
+  { href: '/admin/organisation', label: 'Organisation', icon: Building2 },
 ];
 
 type AdminShellProps = {
