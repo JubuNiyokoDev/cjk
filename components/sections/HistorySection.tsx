@@ -44,7 +44,7 @@ const timeline = [
   {
     year: '2026',
     icon: Calendar,
-    title: '54,950 membres',
+    title: '54 950 membres',
     description: 'Au 30 juillet 2026, le Centre atteint un nombre record de jeunes inscrits, confirmant son rôle majeur dans la communauté.',
     color: 'from-red-500 to-pink-500',
   },

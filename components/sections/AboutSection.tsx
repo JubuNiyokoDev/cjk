@@ -15,7 +15,7 @@ const STORY_PARAGRAPHS = [
 ];
 
 const stats = [
-  { icon: Users, value: '50,788', label: 'Jeunes membres' },
+  { icon: Users, value: '54 950', label: 'Jeunes membres' },
   { icon: Heart, value: '16-30', label: 'Âge des membres' },
   { icon: Globe, value: '1992', label: 'Année de création' },
   { icon: Award, value: '3', label: 'Prix internationaux' },

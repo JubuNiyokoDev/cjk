@@ -8,7 +8,18 @@ import Link from 'next/link';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import Image from 'next/image';
 
-const navItems = [
+type NavLink = { name: string; href: string };
+
+/**
+ * Une entrée de menu est soit un lien direct, soit un déroulant de liens.
+ * Les propriétés absentes sont déclarées explicitement pour que `item.submenu`
+ * suffise à discriminer les deux formes.
+ */
+type NavItem =
+  | (NavLink & { submenu?: undefined })
+  | { name: string; href?: undefined; submenu: NavLink[] };
+
+const navItems: NavItem[] = [
   { name: 'Accueil', href: '/' },
   { 
     name: 'À propos', 
@@ -27,15 +38,18 @@ const navItems = [
       { name: 'Galerie', href: '/gallery' },
     ]
   },
-  { name: 'Galerie', href: '/#gallery' },
-  { name: 'Créer Galerie', href: '/admin/gallery' },
   { name: 'Contact', href: '/#contact' },
 ];
+
+/** Lien réservé au staff : la gestion de la galerie n'a rien à faire dans le menu public. */
+const STAFF_ITEM: NavItem = { name: 'Créer Galerie', href: '/admin/gallery' };
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { member, isAuthenticated, isLoading, logout } = useAuthSession();
+  const { member, isAuthenticated, isLoading, isOfficialMember, logout } = useAuthSession();
+
+  const visibleNavItems = isOfficialMember ? [...navItems, STAFF_ITEM] : navItems;
 
   const displayName =
     member?.first_name || member?.last_name
@@ -83,7 +97,7 @@ export default function Navigation() {
           </motion.div>
 
           <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item, index) => (
+            {visibleNavItems.map((item, index) => (
               <motion.div
                 key={item.name}
                 initial={{ opacity: 0, y: -20 }}
@@ -179,7 +193,7 @@ export default function Navigation() {
             className="md:hidden bg-white border-t"
           >
             <div className="px-4 py-4 space-y-3">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <div key={item.name}>
                   {item.submenu ? (
                     <>
