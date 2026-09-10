@@ -67,22 +67,15 @@ type AwardsSectionProps = {
 };
 
 function PartnerLogo({ logo, name }: { logo: string | null | undefined; name: string }) {
-  const [loaded, setLoaded] = useState(false);
-
   return (
     <div className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-xl bg-white px-4 shadow-sm ring-1 ring-gray-100">
-      {!loaded && logo && (
-        <span className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-100 via-white to-gray-100" />
-      )}
       {logo ? (
         <img
           src={logo}
           alt={`Logo ${name}`}
-          className={`relative max-h-14 max-w-full object-contain transition-all duration-500 ${loaded ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+          className="relative max-h-14 max-w-full object-contain"
           loading="lazy"
           decoding="async"
-          onLoad={() => setLoaded(true)}
-          onError={() => setLoaded(true)}
         />
       ) : (
         <Handshake className="h-8 w-8 text-orange-400" aria-hidden="true" />
