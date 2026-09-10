@@ -176,13 +176,41 @@ export async function getActivities(params?: {
 // Contenu institutionnel qui change rarement : cache 5 minutes.
 
 export async function getPartners() {
-  const data = await safeFetch<Partner[] | Paginated<Partner>>(
+  const firstPage = await safeFetch<Partner[] | Paginated<Partner>>(
     '/api/organization/partners/',
-    undefined,
-    { next: { revalidate: 300 } },
+    { page_size: 100 },
+    { cache: 'no-store' },
     []
   );
-  return unwrapList(data);
+
+  if (Array.isArray(firstPage)) return firstPage;
+
+  const items = [...firstPage.results];
+  let page = 2;
+  let next = firstPage.next;
+
+  // Certains serveurs DRF ignorent page_size et gardent leur limite (souvent 10).
+  // On suit donc toutes les pages pour que le site public affiche chaque partenaire.
+  while (next && items.length < firstPage.count) {
+    const data = await safeFetch<Partner[] | Paginated<Partner>>(
+      '/api/organization/partners/',
+      { page, page_size: 100 },
+      { cache: 'no-store' },
+      []
+    );
+
+    if (Array.isArray(data)) {
+      items.push(...data);
+      break;
+    }
+
+    if (data.results.length === 0) break;
+    items.push(...data.results);
+    next = data.next;
+    page += 1;
+  }
+
+  return items;
 }
 
 export async function getCoreValues() {

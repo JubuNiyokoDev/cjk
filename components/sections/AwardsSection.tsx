@@ -3,9 +3,16 @@
 
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Handshake } from 'lucide-react';
 import type { Award as AwardType, Partner } from '@/lib/types';
 import { orgColor, orgIcon } from '@/lib/org-visuals';
+import {
+  type CarouselApi,
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from '@/components/ui/carousel';
 
 /** Fallbacks si l'API est indisponible ou vide. */
 const DEFAULT_AWARDS: Pick<AwardType, 'id' | 'name' | 'description' | 'year' | 'icon' | 'color'>[] = [
@@ -59,11 +66,57 @@ type AwardsSectionProps = {
   partners?: Partner[];
 };
 
+function PartnerLogo({ logo, name }: { logo: string | null | undefined; name: string }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-xl bg-white px-4 shadow-sm ring-1 ring-gray-100">
+      {!loaded && logo && (
+        <span className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-100 via-white to-gray-100" />
+      )}
+      {logo ? (
+        <img
+          src={logo}
+          alt={`Logo ${name}`}
+          className={`relative max-h-14 max-w-full object-contain transition-all duration-500 ${loaded ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          onError={() => setLoaded(true)}
+        />
+      ) : (
+        <Handshake className="h-8 w-8 text-orange-400" aria-hidden="true" />
+      )}
+    </div>
+  );
+}
+
 export default function AwardsSection({ awards, partners }: AwardsSectionProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const awardItems = awards && awards.length > 0 ? awards : DEFAULT_AWARDS;
   const partnerItems = partners && partners.length > 0 ? partners : DEFAULT_PARTNERS;
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [selectedPartner, setSelectedPartner] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    const updateSelection = () => setSelectedPartner(carouselApi.selectedScrollSnap());
+    updateSelection();
+    carouselApi.on('select', updateSelection);
+    carouselApi.on('reInit', updateSelection);
+    return () => {
+      carouselApi.off('select', updateSelection);
+      carouselApi.off('reInit', updateSelection);
+    };
+  }, [carouselApi]);
+
+  useEffect(() => {
+    if (!carouselApi || isPaused || partnerItems.length < 2) return;
+    const timer = window.setInterval(() => carouselApi.scrollNext(), 3200);
+    return () => window.clearInterval(timer);
+  }, [carouselApi, isPaused, partnerItems.length]);
 
   return (
     <section className="py-20 bg-gradient-to-b from-gray-50 to-white" ref={ref}>
@@ -121,50 +174,69 @@ export default function AwardsSection({ awards, partners }: AwardsSectionProps) 
           initial={{ opacity: 0, y: 50 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="bg-white rounded-3xl shadow-xl p-12"
+          className="relative overflow-hidden rounded-3xl border border-orange-100 bg-white px-5 py-10 shadow-xl sm:px-10 lg:px-12"
         >
-          <h3 className="text-3xl font-bold text-center mb-8 text-gray-900">
-            Nos Partenaires
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {partnerItems.map((partner, index) => {
+          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-orange-100/60 blur-3xl" />
+          <div className="relative mb-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="text-center sm:text-left">
+              <span className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-600">
+                <Handshake className="h-4 w-4" /> Un réseau engagé
+              </span>
+              <h3 className="text-3xl font-bold text-gray-900">Nos Partenaires</h3>
+              <p className="mt-2 text-gray-500">
+                {partnerItems.length} organisations qui avancent avec nous
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => carouselApi?.scrollPrev()} className="grid h-11 w-11 place-items-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-600 hover:shadow-md" aria-label="Voir les partenaires précédents">
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button type="button" onClick={() => carouselApi?.scrollNext()} className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg" aria-label="Voir les partenaires suivants">
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <Carousel
+            setApi={setCarouselApi}
+            opts={{ align: 'start', loop: true, skipSnaps: false }}
+            className="relative"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onFocusCapture={() => setIsPaused(true)}
+            onBlurCapture={() => setIsPaused(false)}
+          >
+            <CarouselContent className="-ml-3 py-2">
+              {partnerItems.map((partner, index) => {
               const website = safeWebsite(partner.website);
               const card = (
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow h-full flex flex-col items-center justify-center gap-3">
-                  {partner.logo && (
-                    <img
-                      src={partner.logo}
-                      alt={`Logo ${partner.name}`}
-                      className="h-14 w-auto object-contain"
-                      loading="lazy"
-                    />
-                  )}
-                  <div>
-                    <p className="font-semibold text-gray-900">{partner.name}</p>
+                <div className="group flex h-full min-h-52 flex-col rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-orange-50/60 to-red-50/70 p-5 text-center transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl">
+                  <PartnerLogo logo={partner.logo} name={partner.name} />
+                  <div className="flex flex-1 flex-col items-center justify-center pt-4">
+                    <p className="line-clamp-2 font-semibold leading-snug text-gray-900 transition-colors group-hover:text-orange-600">{partner.name}</p>
                     {partner.country && (
-                      <p className="text-sm text-gray-500">{partner.country}</p>
+                      <p className="mt-1 text-sm text-gray-500">{partner.country}</p>
                     )}
                   </div>
                 </div>
               );
               return (
-                <motion.div
-                  key={partner.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
-                >
-                  {website ? (
-                    <a href={website} target="_blank" rel="noopener noreferrer" className="block h-full">
-                      {card}
-                    </a>
-                  ) : (
-                    card
-                  )}
-                </motion.div>
+                <CarouselItem key={partner.id} className="basis-[86%] pl-3 sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                  <motion.div initial={{ opacity: 0, y: 18 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.45, delay: Math.min(index, 4) * 0.08 }} className="h-full">
+                    {website ? <a href={website} target="_blank" rel="noopener noreferrer" className="block h-full" aria-label={`Visiter le site de ${partner.name}`}>{card}</a> : card}
+                  </motion.div>
+                </CarouselItem>
               );
-            })}
+              })}
+            </CarouselContent>
+          </Carousel>
+
+          <div className="mt-7 flex items-center justify-center gap-2" aria-label="Position du carrousel">
+            {partnerItems.map((partner, index) => (
+              <button key={partner.id} type="button" onClick={() => carouselApi?.scrollTo(index)} aria-label={`Afficher ${partner.name}`} aria-current={selectedPartner === index ? 'true' : undefined} className={`h-2 rounded-full transition-all duration-300 ${selectedPartner === index ? 'w-7 bg-gradient-to-r from-orange-500 to-red-500' : 'w-2 bg-gray-200 hover:bg-orange-300'}`} />
+            ))}
           </div>
+          <p className="mt-3 text-center text-xs text-gray-400">Défilement automatique · Survolez pour mettre en pause</p>
         </motion.div>
       </div>
     </section>
