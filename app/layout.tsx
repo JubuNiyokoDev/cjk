@@ -1,6 +1,7 @@
 ﻿import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import TopLoader from '@/components/TopLoader';
 import Chatbot from '@/components/Chatbot';
 import { Toaster } from '@/components/ui/toaster';
@@ -75,7 +76,13 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={inter.className}>
-        <TopLoader />
+        <Suspense fallback={null}>
+          {/* Suspense requis : useSearchParams dans TopLoader déoptimise
+              autrement toute page statique en rendu 100% client (warning
+              "deopted into client-side rendering" au build), ce qui privait le
+              HTML prérendu de tout contenu serveur. */}
+          <TopLoader />
+        </Suspense>
         {children}
         <Chatbot />
         <Toaster />
