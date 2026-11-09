@@ -11,6 +11,10 @@
 # next.js
 /.next/
 /out/
+# répertoires de build/bascule utilisés par scripts/deploy.sh
+/.next-build/
+/.next.previous/
+/.next.failed/
 
 # production
 /build
