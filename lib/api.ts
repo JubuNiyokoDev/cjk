@@ -28,6 +28,16 @@ type Paginated<T> = {
 function unwrapList<T>(data: T[] | Paginated<T>) {
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data.results)) return data.results;
+  // Un repli silencieux sur [] a masque pendant des semaines le fait que
+  // GET /api/activities/ renvoyait {"categories": "..."} (l'APIRootView du
+  // routeur DRF) au lieu de la liste : la page s'affichait vide, sans la
+  // moindre erreur. On trace desormais la forme inattendue.
+  if (data && typeof data === 'object') {
+    console.warn(
+      'API: reponse de liste inattendue, repli sur un tableau vide. Cles recues :',
+      Object.keys(data as Record<string, unknown>).join(', ')
+    );
+  }
   return [];
 }
 
