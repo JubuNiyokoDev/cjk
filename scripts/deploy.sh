@@ -125,6 +125,14 @@ fi
 # --- 4. Build hors ligne de service ----------------------------------------
 log "build dans $BUILD_DIR (le site continue de tourner sur $LIVE_DIR)"
 rm -rf "$BUILD_DIR"
+# Reprise du cache webpack du build precedent : `next build` vide son repertoire
+# de sortie mais preserve `cache/`. Sans cette copie, chaque deploiement repart
+# d'un build a froid, nettement plus lent.
+if [[ -d "$LIVE_DIR/cache" ]]; then
+  log "reprise du cache de build precedent"
+  mkdir -p "$BUILD_DIR"
+  cp -a "$LIVE_DIR/cache" "$BUILD_DIR/cache"
+fi
 NEXT_DIST_DIR="$BUILD_DIR" npm run build
 
 # --- 5. Contrôles avant bascule --------------------------------------------
