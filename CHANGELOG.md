@@ -1,5 +1,88 @@
 # Changelog
 
+## [Unreleased] - 2026-11-09 - `/about` : correctif réel du rendu dynamique
+
+Suite du rapport du 2026-10-13. L'utilisateur signale que `/about` reste très
+difficile d'accès et que les données de l'équipe n'arrivent toujours pas.
+
+### Pourquoi le correctif précédent n'a pas fonctionné
+
+Le commit `c81abc9` affirmait rendre la page dynamique en supprimant
+`export const revalidate = 300`. **C'est faux** : dans l'App Router, retirer
+l'export `revalidate` ne rend pas une page dynamique, cela supprime seulement sa
+période de revalidation. La sortie de `npm run build` le montrait toujours :
+
+```
+┌ λ /            ├ λ /activities   ├ λ /blog   ├ λ /news
+├ ○ /about       ← seule route serveur encore prérendue au build
+```
+
+Les routes saines sont dynamiques pour une raison que `/about` n'avait pas :
+`/activities`, `/news` et `/blog` lisent `searchParams`, et `/` appelle
+`getPartners()` qui utilise `cache: 'no-store'`. `/about` n'avait ni l'un ni
+l'autre — `getTeamMembers()` utilisait `next: { revalidate: 300 }`, un fetch
+*mis en cache*, qui laisse Next.js prérendre la page au build.
+
+### Diagnostic (vérifié le 2026-11-09)
+
+1. **L'API va bien.** `GET https://api.cjkamenge.com/api/organization/team/`
+   → `HTTP 200` en 0,88 s, 4 membres réels (`count: 4`).
+2. **`/about` en production renvoie toujours un `304` vide.**
+   `curl https://www.cjkamenge.com/about` → `HTTP/2 304`, corps de 0 octet,
+   `x-nextjs-cache: HIT`, `cache-control: s-maxage=300, stale-while-revalidate`,
+   `etag: "c2oq1imdlbqq6"`. Sur le même hôte, `/` → `HTTP 200`, 148 912 octets,
+   `cache-control: private, no-cache, no-store`. La différence d'en-têtes vient
+   directement du mode de rendu : une route `○` est servie avec un ETag et
+   `s-maxage`, donc nginx la met en cache ; une route `λ` ne l'est jamais.
+3. **Les données étaient figées au build.** Le log de build montre
+   `API fetch failed: connect ECONNREFUSED 127.0.0.1:8000` pendant la génération
+   statique (`.env.example` / `.env.development` pointent sur
+   `http://localhost:8000`). Le HTML prérendu de `/about` contenait donc les
+   6 cartes factices `DEFAULT_TEAM`, jamais les 4 membres réels.
+
+Cause racine unique : **`/about` n'a jamais cessé d'être une route statique.**
+Les deux symptômes (page qui ne s'ouvre pas, données absentes) en découlent.
+
+### Correctif appliqué
+
+1. **`app/about/page.tsx`** — `export const dynamic = 'force-dynamic'`. Rend la
+   page à chaque requête, ce qui supprime l'ETag et `s-maxage` de la réponse :
+   nginx ne peut plus constituer d'entrée de cache coincée en `304`.
+2. **`lib/api.ts`** — `getTeamMembers()` passe de `next: { revalidate: 300 }` à
+   `cache: 'no-store'`, cohérent avec une page dynamique et avec `getPartners()`.
+3. **`lib/api.ts`** — garde-fou anti-blocage dans `safeFetch` : sur le chemin
+   `no-store`, un `AbortSignal.timeout(12_000)` évite qu'une API qui ne répond
+   plus fasse pendre indéfiniment une page rendue à la requête ; on bascule sur le
+   `fallback`. Volontairement limité au chemin `no-store` : fournir un `signal`
+   désactiverait le cache de données de Next.js sur les appels `next.revalidate`.
+
+### Validation
+
+| Vérification | Résultat |
+| --- | --- |
+| `npx tsc --noEmit` | ✅ Exit 0 |
+| `npx next build` | ✅ `λ /about` (était `○ /about`) |
+| `next start` + `GET /about` | ✅ `HTTP 200`, 34 850 octets, `cache-control: private, no-cache, no-store`, **aucun ETag, aucun `x-nextjs-cache`** |
+| 3 GET successifs + GET conditionnel `If-None-Match` | ✅ `200` à chaque fois, jamais de `304` |
+| Contenu SSR | ✅ membres réels (`SINDAYIGAYA`, `MBAZUMUTIMA`, `cyriaquesindayigaya@gmail.com`) présents ; cartes `DEFAULT_TEAM` absentes |
+| Doctype | ✅ `<!DOCTYPE html>` (plus de Quirks Mode) |
+| Repli API injoignable | ✅ build avec `localhost:8000` → `safeFetch` renvoie `[]` → cartes de secours |
+
+### Déploiement
+
+La page n'étant plus cacheable, aucune purge nginx récurrente ne sera nécessaire
+à l'avenir. Pour la mise en production **une seule fois** :
+
+1. Builder avec `NEXT_PUBLIC_API_BASE_URL=https://api.cjkamenge.com` (sinon le
+   bundle embarque `http://localhost:8000` et le site ne voit aucune donnée).
+2. Redémarrer le process Next.js.
+3. Purger l'entrée nginx existante de `/about` (`proxy_cache_path` ou
+   `proxy_cache_purge`) : l'artefact `304` déjà stocké survivrait au déploiement.
+4. Vérifier : `curl -I https://www.cjkamenge.com/about` → `200` avec
+   `cache-control: private, no-cache, no-store` et sans `etag`.
+
+---
+
 ## [Unreleased] - 2026-10-13 - Production Blank Page Investigation (`/about`)
 
 ### Problem

@@ -76,10 +76,21 @@ async function safeFetch<T>(
       headers.Authorization = `Bearer ${tokens.access}`;
     }
     
+    // Garde-fou anti-blocage : une page rendue dynamiquement attend ce fetch pour
+    // répondre. Si l'API ne répond plus, on abandonne au bout de 12 s et on tombe
+    // sur le `fallback` plutôt que de laisser la requête HTTP pendre.
+    // Uniquement sur le chemin `no-store` : passer un `signal` désactiverait le
+    // cache de données de Next.js sur les appels qui utilisent `next.revalidate`.
+    const timeoutSignal =
+      shouldSkipCache && !isFormData && !init?.signal && typeof AbortSignal?.timeout === 'function'
+        ? AbortSignal.timeout(12_000)
+        : undefined;
+
     const response = await fetch(url, {
       ...init,
       headers,
       body: isFormData ? params : init?.body,
+      ...(timeoutSignal ? { signal: timeoutSignal } : {}),
       ...(nextOption ? { next: nextOption } : {}),
     });
 
@@ -224,10 +235,13 @@ export async function getCoreValues() {
 }
 
 export async function getTeamMembers() {
+  // `no-store` : /about est rendue dynamiquement, on veut l'équipe réellement
+  // enregistrée en base à chaque visite (un cache de données faisait réapparaître
+  // les cartes de secours pendant 5 minutes après un échec ponctuel de l'API).
   const data = await safeFetch<TeamMember[] | Paginated<TeamMember>>(
     '/api/organization/team/',
     undefined,
-    { next: { revalidate: 300 } },
+    { cache: 'no-store' },
     []
   );
   return unwrapList(data);
