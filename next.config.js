@@ -42,6 +42,19 @@ const nextConfig = {
         port: "8000",
         pathname: "/media/**",
       },
+      // Nouveaux médias : stockage objet S3 centralisé (RustFS).
+      // Les fichiers déjà téléversés restent servis depuis api.cjkamenge.com/media/
+      // (voir core/storages.py côté API), les deux schémas coexistent donc.
+      {
+        protocol: "https",
+        hostname: "cdn.rundinova.com",
+        pathname: "/cjk-media/**",
+      },
+      {
+        protocol: "https",
+        hostname: "s3.rundinova.com",
+        pathname: "/cjk-media/**",
+      },
     ],
   },
 };
